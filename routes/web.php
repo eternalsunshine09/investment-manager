@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
     AuthController, DashboardController, ProductController, 
     TransactionController, ReportController, PortfolioController, 
-    AccountController, ToolController, CashFlowController, WatchlistController
+    AccountController, ToolController, CashFlowController, WatchlistController, GoalController
 };
 
 /*
@@ -82,4 +82,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');
     Route::post('/watchlist', [WatchlistController::class, 'store'])->name('watchlist.store');
     Route::delete('/watchlist/{id}', [WatchlistController::class, 'destroy'])->name('watchlist.destroy');
+
+    // GOAL
+    Route::post('/goals', [GoalController::class, 'store'])->name('goals.store');
+    Route::put('/goals/{goal}', [GoalController::class, 'update'])->name('goals.update');
+    Route::delete('/goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
 });

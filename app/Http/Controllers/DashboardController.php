@@ -7,7 +7,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\PortfolioSnapshot;
 use App\Models\Goal;
-use App\Models\Watchlist;
+use App\Models\Watchlist; // <--- Pastikan Model Watchlist di-import
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -46,7 +46,7 @@ class DashboardController extends Controller
                 $pnlAmt = $marketValue - $modalTertahan;
                 $pnlPct = ($modalTertahan > 0) ? ($pnlAmt / $modalTertahan) * 100 : 0;
 
-                $cat = strtoupper($product->type ?? 'LAINNYA');
+                $cat = strtoupper($product->category ?? 'LAINNYA');
                 $composition[$cat] = ($composition[$cat] ?? 0) + $marketValue;
 
                 $productPerformance[] = [
@@ -62,6 +62,7 @@ class DashboardController extends Controller
         $netWorth = $totalCash + $totalAssetValue;
         $profit = $totalAssetValue - $totalModalHoldings; 
         $isProfit = $profit >= 0;
+        $totalInvested = $totalAssetValue;
 
         // --- 3. HITUNG PERTUMBUHAN BULANAN ---
         $startOfMonthNetWorth = PortfolioSnapshot::where('user_id', $userId)
@@ -79,33 +80,20 @@ class DashboardController extends Controller
         $topGainers = $coll->sortByDesc('pnl_pct')->take(2);
         $worstPerformers = $coll->sortBy('pnl_pct')->take(2);
 
-        // --- 5. LOGIKA INSIGHT ---
-        $watchlists = Watchlist::where('user_id', $userId)
-            ->limit(3)
-            ->get()
-            ->map(function($item) {
-                // Hitung seberapa dekat harga pasar dengan target beli
-                if ($item->current_price > 0 && $item->target_price > 0) {
-                    $item->gap = (($item->current_price - $item->target_price) / $item->target_price) * 100;
-                } else {
-                    $item->gap = 0;
-                }
-                return $item;
-            })
-            ->sortBy('gap');
-
-        arsort($composition);
-        $topAsset = array_key_first($composition);
-        $topAssetVal = reset($composition);
-        $topAssetPct = ($netWorth > 0) ? ($topAssetVal / $netWorth) * 100 : 0;
+        // --- 5. WATCHLIST & INSIGHT ---
+        $insights = []; // Kita pakai watchlist widget, jadi insight bisa dikosongkan atau dipakai nanti
         
-        if ($topAssetPct > 50 && $topAsset !== 'KAS/RDN') {
-            $insights[] = ['type' => 'warning', 'icon' => '📊', 'text' => "$topAsset mendominasi " . round($topAssetPct) . "% portofolio."];
-        } else {
-            $insights[] = ['type' => 'success', 'icon' => '✅', 'text' => "Diversifikasi portofolio seimbang."];
-        }
+        $watchlists = Watchlist::where('user_id', $userId)
+            ->limit(5)
+            ->get()
+            ->sortBy(function($item) {
+                if ($item->target_price > 0 && $item->current_price > 0) {
+                    return ($item->current_price - $item->target_price) / $item->target_price;
+                }
+                return 100;
+            });
 
-        // --- 6. TARGET KEUANGAN (GOALS) ---
+        // --- 6. TARGET KEUANGAN (PERBAIKAN DI SINI) ---
         $goals = Goal::where('user_id', $userId)->with('products')->get()->map(function($goal) {
             $currentVal = 0;
             foreach ($goal->products as $p) {
@@ -116,46 +104,31 @@ class DashboardController extends Controller
             return $goal;
         });
 
-        // HANYA DEKLARASIKAN SEKALI SAJA
-        $goal = $goals->where('percentage', '<', 100)->sortByDesc('percentage')->first() ?? $goals->first();
+        // Urutkan target berdasarkan persentase tertinggi
+        $goals = $goals->sortByDesc('percentage')->values();
 
-        // --- 7. DATA CHART (PERBAIKAN FITUR PILIHAN WAKTU) ---
-        // Kita kirim SEMUA data historis ke frontend, nanti JS yang filter.
+        // --- 7. DATA CHART ---
         $snapshots = PortfolioSnapshot::where('user_id', $userId)
             ->orderBy('snapshot_date', 'asc')
-            ->get(['snapshot_date', 'net_worth']); // Ambil 2 kolom saja biar ringan
+            ->get(['snapshot_date', 'net_worth']);
             
-        // Format data untuk Chart.js
         $allChartData = $snapshots->map(function($s) {
             return [
-                'x' => Carbon::parse($s->snapshot_date)->format('Y-m-d'), // Format tanggal standar
+                'x' => Carbon::parse($s->snapshot_date)->format('Y-m-d'),
                 'y' => $s->net_worth
             ];
         });
 
-        // Jika kosong, kasih data dummy hari ini
         if ($allChartData->isEmpty()) {
-            $allChartData = collect([[
-                'x' => date('Y-m-d'),
-                'y' => $netWorth
-            ]]);
+            $allChartData = collect([['x' => date('Y-m-d'), 'y' => $netWorth]]);
         }
 
-        $totalInvested = $totalAssetValue;
+        $allProducts = Product::where('user_id', $userId)->orderBy('code')->get(['id', 'code', 'name', 'category']);
 
-        return view('dashboard', compact(
-            'netWorth', 'totalCash', 'totalInvested', 'totalAssetValue',
-            'profit', 'isProfit', 'growthPercentage', 'composition',
-            'topGainers', 'worstPerformers', 'insights', 'goal',
-            'watchlists',
-            'allChartData' // <--- Variabel baru yang dikirim ke View
-        ));
-
-        // --- 8. RETURN VIEW (PERBAIKAN COMPACT) ---
+        // --- 8. RETURN VIEW (PASTIKAN MENGIRIM 'goals') ---
         return view('dashboard', compact(
             'netWorth',
             'totalCash',
-            'watchlists',
             'totalInvested',
             'totalAssetValue',
             'profit',
@@ -165,9 +138,10 @@ class DashboardController extends Controller
             'topGainers',
             'worstPerformers',
             'insights',
-            'goal',          // <--- HANYA 'goal', JANGAN ADA 'primaryGoal'
-            'growthLabels',
-            'growthData'
+            'goals',         // <--- INI PENTING! Pakai 'goals' (jamak), bukan 'goal'
+            'watchlists',
+            'allChartData',
+            'allProducts'
         ));
     }
 }
