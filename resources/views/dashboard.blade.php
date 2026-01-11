@@ -75,133 +75,162 @@
             </div>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-6">
-            <div class="md:col-span-2 bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-bold text-lg text-slate-800">📈 Tren Portofolio (30 Hari)</h3>
-                    <select
-                        class="bg-slate-50 text-xs font-bold text-slate-500 py-2 px-3 rounded-lg outline-none cursor-pointer">
-                        <option>30 Hari</option>
-                        <option>Year to Date</option>
-                    </select>
+        <div class="md:col-span-2 bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100"
+            x-data="chartComponent()">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                    <span>📈</span> Tren Nilai Portofolio
+                </h3>
+
+                <div class="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
+                    @foreach(['1M'=>'1 Bln', '3M'=>'3 Bln', '6M'=>'6 Bln', '1Y'=>'1 Thn', 'ALL'=>'Semua'] as $key =>
+                    $label)
+                    <button @click="filterChart('{{ $key }}')"
+                        :class="activeFilter === '{{ $key }}' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        {{ $label }}
+                    </button>
+                    @endforeach
                 </div>
-                <div class="h-72 w-full">
-                    <canvas id="portfolioChart"></canvas>
+            </div>
+
+            <div class="h-72 w-full relative">
+                <canvas id="portfolioChart"></canvas>
+                <div x-show="isLoading"
+                    class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm transition">
+                    <svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col h-full relative overflow-hidden">
+            <div class="flex justify-between items-center mb-6 z-10 relative">
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                    <span>🎯</span> Watchlist
+                </h3>
+                <a href="{{ route('watchlist.index') }}" class="text-xs font-bold text-indigo-600 hover:underline">Lihat
+                    Semua &rarr;</a>
+            </div>
+
+            <div class="flex-1 space-y-4 overflow-y-auto custom-scrollbar z-10 relative">
+                @forelse($watchlists as $item)
+                @php
+                $isCheap = $item->current_price <= $item->target_price;
+                    $diff = $item->current_price - $item->target_price;
+                    $diffPct = ($item->target_price > 0) ? ($diff / $item->target_price) * 100 : 0;
+                    @endphp
+                    <div
+                        class="group flex items-center justify-between p-3 rounded-2xl border border-slate-50 hover:bg-slate-50 hover:border-slate-100 transition cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xs">
+                                {{ Str::limit($item->code, 4, '') }}
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-700 text-sm">{{ $item->code }}</p>
+                                <p class="text-[10px] text-slate-400">Target:
+                                    {{ number_format($item->target_price) }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-sm text-slate-800">{{ number_format($item->current_price) }}
+                            </p>
+                            @if($isCheap)
+                            <span
+                                class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">BUY
+                                NOW! 🚀</span>
+                            @else
+                            <span class="text-[10px] font-bold text-orange-400">{{ number_format($diffPct, 1) }}%
+                                lagi</span>
+                            @endif
+                        </div>
+                    </div>
+                    @empty
+                    <div class="text-center py-8 text-slate-400">
+                        <p class="text-sm">Belum ada incaran.</p>
+                        <a href="{{ route('watchlist.index') }}" class="text-indigo-500 font-bold text-xs mt-2 block">+
+                            Tambah</a>
+                    </div>
+                    @endforelse
+            </div>
+
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50">
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-lg mb-6 text-slate-800">🧩 Komposisi Aset</h3>
+                <div class="h-72 flex items-center justify-center relative">
+                    <canvas id="assetChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total</span>
+                        <span class="text-xl font-black text-slate-800">100%</span>
+                    </div>
                 </div>
             </div>
 
             <div
-                class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col h-full relative overflow-hidden">
-                <div class="flex justify-between items-center mb-6 z-10 relative">
+                class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col justify-center h-full relative overflow-hidden">
+                <div class="flex justify-between items-center mb-6 relative z-10">
                     <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
-                        <span>🎯</span> Watchlist
+                        <span>🎯</span> Target Keuangan
                     </h3>
-                    <a href="{{ route('watchlist.index') }}"
-                        class="text-xs font-bold text-indigo-600 hover:underline">Lihat Semua &rarr;</a>
-                </div>
-
-                <div class="flex-1 space-y-4 overflow-y-auto custom-scrollbar z-10 relative">
-                    @forelse($watchlists as $item)
-                    @php
-                    $isCheap = $item->current_price <= $item->target_price;
-                        $diff = $item->current_price - $item->target_price;
-                        $diffPct = ($item->target_price > 0) ? ($diff / $item->target_price) * 100 : 0;
-                        @endphp
-                        <div
-                            class="group flex items-center justify-between p-3 rounded-2xl border border-slate-50 hover:bg-slate-50 hover:border-slate-100 transition cursor-pointer">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xs">
-                                    {{ Str::limit($item->code, 4, '') }}
-                                </div>
-                                <div>
-                                    <p class="font-bold text-slate-700 text-sm">{{ $item->code }}</p>
-                                    <p class="text-[10px] text-slate-400">Target:
-                                        {{ number_format($item->target_price) }}</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-bold text-sm text-slate-800">{{ number_format($item->current_price) }}
-                                </p>
-                                @if($isCheap)
-                                <span
-                                    class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">BUY
-                                    NOW! 🚀</span>
-                                @else
-                                <span class="text-[10px] font-bold text-orange-400">{{ number_format($diffPct, 1) }}%
-                                    lagi</span>
-                                @endif
-                            </div>
-                        </div>
-                        @empty
-                        <div class="text-center py-8 text-slate-400">
-                            <p class="text-sm">Belum ada incaran.</p>
-                            <a href="{{ route('watchlist.index') }}"
-                                class="text-indigo-500 font-bold text-xs mt-2 block">+ Tambah</a>
-                        </div>
-                        @endforelse
-                </div>
-
-                <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50">
-                </div>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                    <h3 class="font-bold text-lg mb-6 text-slate-800">🧩 Komposisi Aset</h3>
-                    <div class="h-72 flex items-center justify-center relative">
-                        <canvas id="assetChart"></canvas>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total</span>
-                            <span class="text-xl font-black text-slate-800">100%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col justify-center">
-                    <h3 class="font-bold text-lg mb-6 text-slate-800">🎯 Target Keuangan</h3>
-
                     @if($goal)
-                    <div class="mb-6">
-                        <div class="flex justify-between items-end mb-2">
-                            <div>
-                                <p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Goal Utama</p>
-                                <p class="text-xl font-black text-slate-800">{{ $goal->name }}</p>
-                            </div>
-                            <p class="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
-                                Rp {{ number_format($goal->target_amount, 0, ',', '.') }}
-                            </p>
-                        </div>
-
-                        <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden relative">
-                            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full relative overflow-hidden"
-                                style="width: {{ $goal->percentage ?? 65 }}%">
-                                <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-between mt-3 text-xs font-bold">
-                            <span class="text-slate-400">0%</span>
-                            <span class="text-indigo-600">{{ $goal->percentage ?? 65 }}% Tercapai</span>
-                            <span class="text-slate-400">100%</span>
-                        </div>
-
-                        <div
-                            class="mt-6 p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-2 text-emerald-700 text-sm font-bold">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            On Track — Estimasi Tercapai: Okt 2026
-                        </div>
-                    </div>
-                    @else
-                    <div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                        <p class="text-slate-400 text-sm font-bold">Belum ada target keuangan aktif.</p>
-                        <button class="mt-3 text-indigo-600 font-bold hover:underline">+ Buat Target Baru</button>
-                    </div>
+                    <button class="text-xs font-bold text-slate-400 hover:text-indigo-600">Detail</button>
                     @endif
                 </div>
+
+                @if($goal)
+                <div class="relative z-10">
+                    <div class="text-center mb-6">
+                        <div
+                            class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 text-2xl mb-3 shadow-inner">
+                            🎯
+                        </div>
+                        <h4 class="text-xl font-black text-slate-800">{{ $goal->name }}</h4>
+                        <p class="text-sm font-bold text-slate-400">Target: Rp
+                            {{ number_format($goal->target_amount, 0, ',', '.') }}</p>
+                    </div>
+
+                    <div class="relative h-6 bg-slate-100 rounded-full overflow-hidden mb-2 shadow-inner">
+                        <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000 ease-out"
+                            style="width: {{ $goal->percentage }}%"></div>
+                        <div
+                            class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white drop-shadow-md">
+                            {{ $goal->percentage }}% TERCAPAI
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between text-xs font-bold text-slate-400 px-1">
+                        <span>Rp 0</span>
+                        <span>Rp {{ number_format($goal->target_amount/1000000, 0) }} Jt</span>
+                    </div>
+                </div>
+                @else
+                <div class="text-center py-8 relative z-10">
+                    <div
+                        class="bg-slate-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <i class="fas fa-bullseye text-2xl"></i>
+                    </div>
+                    <p class="text-slate-500 font-bold mb-1">Belum ada target aktif.</p>
+                    <p class="text-xs text-slate-400 mb-6">Tentukan tujuan investasimu sekarang.</p>
+                    <button onclick="/* Logic Buka Modal */"
+                        class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+                        + Buat Target Baru
+                    </button>
+                </div>
+                @endif
+
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
             </div>
 
         </div>
@@ -210,120 +239,164 @@
 
     @push('scripts')
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- 1. PORTFOLIO TREND CHART ---
-        const ctxLine = document.getElementById('portfolioChart').getContext('2d');
+    function chartComponent() {
+        return {
+            activeFilter: '1Y', // Default 1 Tahun
+            isLoading: false,
+            chartInstance: null,
+            allData: @json($allChartData), // Data dari Controller
 
-        // Gradient untuk area chart
-        const gradientLine = ctxLine.createLinearGradient(0, 0, 0, 400);
-        gradientLine.addColorStop(0, 'rgba(102, 126, 234, 0.2)'); // Warna Awal
-        gradientLine.addColorStop(1, 'rgba(102, 126, 234, 0)'); // Transparan
-
-        new Chart(ctxLine, {
-            type: 'line',
-            data: {
-                labels: ['1 Jan', '5 Jan', '10 Jan', '15 Jan', '20 Jan', '25 Jan', '30 Jan'],
-                datasets: [{
-                    label: 'Portfolio Value (Juta Rp)',
-                    data: [90, 91.5, 93, 92, 94.5, 96, 97.35],
-                    borderColor: '#667eea',
-                    backgroundColor: gradientLine,
-                    borderWidth: 3,
-                    tension: 0.4, // Membuat garis melengkung halus
-                    fill: true,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#667eea',
-                    pointHoverRadius: 6
-                }]
+            init() {
+                this.renderChart(this.filterData('1Y'));
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: '#1e293b',
-                        titleFont: {
-                            family: 'Outfit',
-                            size: 13
-                        },
-                        bodyFont: {
-                            family: 'Outfit',
-                            size: 13
-                        },
-                        padding: 10,
-                        cornerRadius: 8,
-                        displayColors: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: {
-                            color: 'rgba(0,0,0,0.03)',
-                            borderDash: [5, 5]
-                        },
-                        ticks: {
-                            font: {
-                                family: 'Outfit'
-                            },
-                            color: '#94a3b8'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            font: {
-                                family: 'Outfit'
-                            },
-                            color: '#94a3b8'
-                        }
-                    }
-                }
-            }
-        });
 
-        // --- 2. ASSET COMPOSITION DONUT CHART ---
-        const ctxDonut = document.getElementById('assetChart').getContext('2d');
-        const compositionData = @json($composition);
+            filterChart(period) {
+                this.activeFilter = period;
+                this.isLoading = true;
 
-        new Chart(ctxDonut, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(compositionData),
-                datasets: [{
-                    data: Object.values(compositionData),
-                    backgroundColor: ['#6366f1', '#10b981', '#f97316', '#eab308', '#ec4899'],
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
+                // Simulasi loading sebentar biar kerasa interaktif
+                setTimeout(() => {
+                    const filteredData = this.filterData(period);
+                    this.updateChart(filteredData);
+                    this.isLoading = false;
+                }, 300);
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%', // Lubang tengah donut
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20,
-                            font: {
-                                family: 'Outfit',
-                                size: 12,
-                                weight: 'bold'
+
+            filterData(period) {
+                const now = new Date();
+                let cutoffDate = new Date();
+
+                switch (period) {
+                    case '1M':
+                        cutoffDate.setMonth(now.getMonth() - 1);
+                        break;
+                    case '3M':
+                        cutoffDate.setMonth(now.getMonth() - 3);
+                        break;
+                    case '6M':
+                        cutoffDate.setMonth(now.getMonth() - 6);
+                        break;
+                    case '1Y':
+                        cutoffDate.setFullYear(now.getFullYear() - 1);
+                        break;
+                    case '5Y':
+                        cutoffDate.setFullYear(now.getFullYear() - 5);
+                        break;
+                    case 'ALL':
+                        cutoffDate = new Date(0);
+                        break; // Tanggal awal banget
+                }
+
+                // Filter data array berdasarkan tanggal x
+                return this.allData.filter(item => new Date(item.x) >= cutoffDate);
+            },
+
+            renderChart(data) {
+                const ctx = document.getElementById('portfolioChart').getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
+                gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+                this.chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => new Date(d.x).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short'
+                        })),
+                        datasets: [{
+                            label: 'Net Worth',
+                            data: data.map(d => d.y),
+                            borderColor: '#4f46e5',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0, // Titik hilang biar clean
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
                             },
-                            color: '#475569'
+                            y: {
+                                grid: {
+                                    color: '#f1f5f9',
+                                    borderDash: [5, 5]
+                                },
+                                beginAtZero: false
+                            }
                         }
                     }
-                }
+                });
+            },
+
+            updateChart(newData) {
+                this.chartInstance.data.labels = newData.map(d => new Date(d.x).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short'
+                }));
+                this.chartInstance.data.datasets[0].data = newData.map(d => d.y);
+                this.chartInstance.update();
             }
-        });
+        }
+    }
+
+    // --- SCRIPT ASSET COMPOSITION (TETAP SAMA) ---
+    // ... (Script donut chart sebelumnya) ...
+    </script>
+
+    // --- 2. ASSET COMPOSITION DONUT CHART ---
+    const ctxDonut = document.getElementById('assetChart').getContext('2d');
+    const compositionData = @json($composition);
+
+    new Chart(ctxDonut, {
+    type: 'doughnut',
+    data: {
+    labels: Object.keys(compositionData),
+    datasets: [{
+    data: Object.values(compositionData),
+    backgroundColor: ['#6366f1', '#10b981', '#f97316', '#eab308', '#ec4899'],
+    borderWidth: 0,
+    hoverOffset: 10
+    }]
+    },
+    options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '75%', // Lubang tengah donut
+    plugins: {
+    legend: {
+    position: 'bottom',
+    labels: {
+    usePointStyle: true,
+    padding: 20,
+    font: {
+    family: 'Outfit',
+    size: 12,
+    weight: 'bold'
+    },
+    color: '#475569'
+    }
+    }
+    }
+    }
+    });
     });
     </script>
     @endpush

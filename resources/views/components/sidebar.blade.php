@@ -15,30 +15,53 @@
             Dashboard
         </a>
 
-        <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-2">Aset</p>
+        <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-2">Aset & Data</p>
 
-        <a href="{{ route('portfolio.index') }}" class="nav-item">
+        <a href="{{ route('portfolio.index') }}" class="nav-item {{ Request::routeIs('portfolio.*') ? 'active' : '' }}">
             <i class="fas fa-briefcase w-6 text-center mr-2 text-emerald-500"></i> Portofolio
         </a>
-        <a href="{{ route('asset.summary') }}" class="nav-item">
+        <a href="{{ route('asset.summary') }}" class="nav-item {{ Request::routeIs('asset.summary') ? 'active' : '' }}">
             <i class="fas fa-chart-line w-6 text-center mr-2 text-blue-500"></i> Harga Aset
         </a>
 
+        <div x-data="{ open: {{ Request::routeIs('products.*') || Request::routeIs('accounts.*') ? 'true' : 'false' }} }"
+            class="pt-1">
+            <button @click="open = !open"
+                class="flex items-center justify-between w-full px-4 py-3 rounded-xl font-bold transition text-slate-500 hover:bg-slate-50 hover:text-indigo-600">
+                <div class="flex items-center">
+                    <i class="fas fa-database w-6 text-center mr-2 text-indigo-500"></i>
+                    Master Data
+                </div>
+                <i class="fas fa-chevron-down text-xs transition-transform" :class="open ? 'rotate-180' : ''"></i>
+            </button>
+            <div x-show="open" x-collapse class="pl-12 pr-4 space-y-1 mt-1 border-l-2 border-slate-100 ml-6">
+                <a href="{{ route('products.index') }}"
+                    class="block py-2 text-sm font-bold {{ Request::routeIs('products.*') ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600' }}">
+                    📦 Produk Investasi
+                </a>
+                <a href="{{ route('accounts.index') }}"
+                    class="block py-2 text-sm font-bold {{ Request::routeIs('accounts.*') ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600' }}">
+                    💳 Rekening / RDN
+                </a>
+            </div>
+        </div>
+
         <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-2">Keuangan</p>
 
-        <a href="{{ route('transactions.index') }}" class="nav-item">
+        <a href="{{ route('transactions.index') }}"
+            class="nav-item {{ Request::routeIs('transactions.*') ? 'active' : '' }}">
             <i class="fas fa-exchange-alt w-6 text-center mr-2 text-orange-500"></i> Transaksi
         </a>
-        <a href="{{ route('cashflow.index') }}" class="nav-item">
+        <a href="{{ route('cashflow.index') }}" class="nav-item {{ Request::routeIs('cashflow.*') ? 'active' : '' }}">
             <i class="fas fa-wallet w-6 text-center mr-2 text-purple-500"></i> Arus Kas
         </a>
 
         <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-2">Analisis</p>
 
-        <a href="{{ route('reports.index') }}" class="nav-item">
+        <a href="{{ route('reports.index') }}" class="nav-item {{ Request::routeIs('reports.*') ? 'active' : '' }}">
             <i class="fas fa-file-alt w-6 text-center mr-2 text-rose-500"></i> Laporan
         </a>
-        <a href="{{ route('watchlist.index') }}" class="nav-item">
+        <a href="{{ route('watchlist.index') }}" class="nav-item {{ Request::routeIs('watchlist.*') ? 'active' : '' }}">
             <i class="fas fa-star w-6 text-center mr-2 text-yellow-500"></i> Watchlist
         </a>
 
@@ -78,7 +101,7 @@
     align-items: center;
     padding: 12px 16px;
     border-radius: 12px;
-    font-weight: 600;
+    font-weight: 700;
     color: #64748b;
     transition: all 0.2s;
 }
@@ -86,5 +109,10 @@
 .nav-item:hover {
     background-color: #f1f5f9;
     color: #4f46e5;
+}
+
+.nav-item.active {
+    background-color: #e0e7ff;
+    color: #4338ca;
 }
 </style>

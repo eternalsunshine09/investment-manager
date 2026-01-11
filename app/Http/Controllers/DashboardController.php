@@ -119,21 +119,37 @@ class DashboardController extends Controller
         // HANYA DEKLARASIKAN SEKALI SAJA
         $goal = $goals->where('percentage', '<', 100)->sortByDesc('percentage')->first() ?? $goals->first();
 
-        // --- 7. DATA CHART ---
+        // --- 7. DATA CHART (PERBAIKAN FITUR PILIHAN WAKTU) ---
+        // Kita kirim SEMUA data historis ke frontend, nanti JS yang filter.
         $snapshots = PortfolioSnapshot::where('user_id', $userId)
-            ->whereYear('snapshot_date', $year)
             ->orderBy('snapshot_date', 'asc')
-            ->get();
+            ->get(['snapshot_date', 'net_worth']); // Ambil 2 kolom saja biar ringan
             
-        $growthLabels = $snapshots->map(fn($s) => Carbon::parse($s->snapshot_date)->format('d M'))->toArray();
-        $growthData = $snapshots->pluck('net_worth')->toArray();
+        // Format data untuk Chart.js
+        $allChartData = $snapshots->map(function($s) {
+            return [
+                'x' => Carbon::parse($s->snapshot_date)->format('Y-m-d'), // Format tanggal standar
+                'y' => $s->net_worth
+            ];
+        });
 
-        if (empty($growthData)) { 
-            $growthLabels = [date('d M')]; 
-            $growthData = [$netWorth]; 
+        // Jika kosong, kasih data dummy hari ini
+        if ($allChartData->isEmpty()) {
+            $allChartData = collect([[
+                'x' => date('Y-m-d'),
+                'y' => $netWorth
+            ]]);
         }
 
-        $totalInvested = $totalAssetValue; 
+        $totalInvested = $totalAssetValue;
+
+        return view('dashboard', compact(
+            'netWorth', 'totalCash', 'totalInvested', 'totalAssetValue',
+            'profit', 'isProfit', 'growthPercentage', 'composition',
+            'topGainers', 'worstPerformers', 'insights', 'goal',
+            'watchlists',
+            'allChartData' // <--- Variabel baru yang dikirim ke View
+        ));
 
         // --- 8. RETURN VIEW (PERBAIKAN COMPACT) ---
         return view('dashboard', compact(
