@@ -45,11 +45,8 @@ Route::middleware(['auth'])->group(function () {
     // Proses Keluar (Logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // DASHBOARD & GOALS
+    // DASHBOARD
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::post('/goals', [DashboardController::class, 'storeGoal'])->name('goals.store');
-    Route::put('/goals/{id}', [DashboardController::class, 'updateGoal'])->name('goals.update');
-    Route::delete('/goals/{id}', [DashboardController::class, 'destroyGoal'])->name('goals.destroy');
 
     // RESOURCE ROUTES (Produk, Rekening, Transaksi)
     Route::resource('products', ProductController::class);

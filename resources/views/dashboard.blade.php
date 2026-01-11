@@ -197,17 +197,29 @@
                                         {{ number_format($item->target_amount/1000000, 0) }} Jt</p>
                                 </div>
                             </div>
-                            <button @click="isEdit = true; 
-                                            form = { 
-                                                id: '{{ $item->id }}', 
-                                                name: '{{ $item->name }}', 
-                                                target_amount: '{{ $item->target_amount }}', 
-                                                product_ids: {{ $item->products->pluck('id') }} 
-                                            }; 
-                                            showGoalModal = true"
-                                class="text-slate-300 hover:text-indigo-600 transition p-1">
-                                <i class="fas fa-pencil-alt text-xs"></i>
-                            </button>
+
+                            <div class="flex gap-1">
+                                <button @click="isEdit = true; 
+                                                form = { 
+                                                    id: '{{ $item->id }}', 
+                                                    name: '{{ $item->name }}', 
+                                                    target_amount: '{{ $item->target_amount }}', 
+                                                    product_ids: {{ $item->products->pluck('id') }} 
+                                                }; 
+                                                showGoalModal = true"
+                                    class="text-slate-300 hover:text-indigo-600 transition p-1" title="Edit">
+                                    <i class="fas fa-pencil-alt text-xs"></i>
+                                </button>
+
+                                <form action="{{ route('goals.destroy', $item->id) }}" method="POST"
+                                    onsubmit="return confirm('Yakin ingin menghapus target {{ $item->name }}?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-slate-300 hover:text-red-500 transition p-1"
+                                        title="Hapus">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
 
                         <div
@@ -217,7 +229,12 @@
                         </div>
                         <div class="flex justify-between items-center text-[10px] font-bold">
                             <span class="text-indigo-600">{{ $item->percentage }}%</span>
+                            @if($item->percentage >= 100)
+                            <span class="text-emerald-500 flex items-center gap-1"><i class="fas fa-check-circle"></i>
+                                TERCAPAI</span>
+                            @else
                             <span class="text-slate-400">On Process</span>
+                            @endif
                         </div>
                     </div>
                     @endforeach
@@ -229,7 +246,7 @@
                         <i class="fas fa-bullseye text-2xl"></i>
                     </div>
                     <p class="text-slate-500 font-bold mb-1 text-sm">Belum ada target.</p>
-                    <p class="text-xs text-slate-400 mb-6">Update controller untuk melihat data.</p>
+                    <p class="text-xs text-slate-400 mb-6">Tentukan tujuan investasimu sekarang.</p>
                     <button
                         @click="isEdit = false; form = { id: '', name: '', target_amount: '', product_ids: [] }; showGoalModal = true"
                         class="text-indigo-600 font-bold text-xs hover:underline mt-2 cursor-pointer">
@@ -310,15 +327,6 @@
                     <span x-text="isEdit ? 'Simpan Perubahan' : 'Buat Target'"></span>
                 </button>
             </form>
-
-            <div x-show="isEdit" class="mt-4 pt-4 border-t border-slate-100 text-center">
-                <form x-bind:action="'/goals/' + form.id" method="POST" onsubmit="return confirm('Hapus target ini?');">
-                    @csrf @method('DELETE')
-                    <button type="submit"
-                        class="text-red-400 hover:text-red-600 text-sm font-bold flex items-center justify-center gap-2 mx-auto"><i
-                            class="fas fa-trash-alt"></i> Hapus Target Ini</button>
-                </form>
-            </div>
         </div>
     </div>
 
@@ -332,7 +340,7 @@ function chartComponent() {
         activeFilter: '1Y',
         isLoading: false,
         chartInstance: null,
-        allData: @json($allChartData ?? []), // Aman jika null
+        allData: @json($allChartData ?? []),
 
         init() {
             if (this.allData.length > 0) {

@@ -7,7 +7,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\PortfolioSnapshot;
 use App\Models\Goal;
-use App\Models\Watchlist; // <--- Pastikan Model Watchlist di-import
+use App\Models\Watchlist;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -81,7 +81,7 @@ class DashboardController extends Controller
         $worstPerformers = $coll->sortBy('pnl_pct')->take(2);
 
         // --- 5. WATCHLIST & INSIGHT ---
-        $insights = []; // Kita pakai watchlist widget, jadi insight bisa dikosongkan atau dipakai nanti
+        $insights = [];
         
         $watchlists = Watchlist::where('user_id', $userId)
             ->limit(5)
@@ -93,14 +93,16 @@ class DashboardController extends Controller
                 return 100;
             });
 
-        // --- 6. TARGET KEUANGAN (PERBAIKAN DI SINI) ---
+        // --- 6. TARGET KEUANGAN ---
         $goals = Goal::where('user_id', $userId)->with('products')->get()->map(function($goal) {
             $currentVal = 0;
             foreach ($goal->products as $p) {
-                $u = $p->transactions->whereIn('type', ['beli', 'dividen_unit'])->sum('amount') - $p->transactions->where('type', 'jual')->sum('amount');
+                $u = $p->transactions->whereIn('type', ['beli', 'dividen_unit'])->sum('amount') - 
+                     $p->transactions->where('type', 'jual')->sum('amount');
                 $currentVal += ($u * $p->current_price);
             }
-            $goal->percentage = ($goal->target_amount > 0) ? min(round(($currentVal / $goal->target_amount) * 100, 1), 100) : 0;
+            $goal->percentage = ($goal->target_amount > 0) ? 
+                min(round(($currentVal / $goal->target_amount) * 100, 1), 100) : 0;
             return $goal;
         });
 
@@ -125,7 +127,7 @@ class DashboardController extends Controller
 
         $allProducts = Product::where('user_id', $userId)->orderBy('code')->get(['id', 'code', 'name', 'category']);
 
-        // --- 8. RETURN VIEW (PASTIKAN MENGIRIM 'goals') ---
+        // --- 8. RETURN VIEW ---
         return view('dashboard', compact(
             'netWorth',
             'totalCash',
@@ -138,10 +140,93 @@ class DashboardController extends Controller
             'topGainers',
             'worstPerformers',
             'insights',
-            'goals',         // <--- INI PENTING! Pakai 'goals' (jamak), bukan 'goal'
+            'goals',
             'watchlists',
             'allChartData',
             'allProducts'
         ));
+    }
+
+    // --- METHOD CRUD GOALS YANG DIPISAHKAN ---
+
+    public function storeGoal(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'target_amount' => 'required|numeric|min:0',
+            'target_date' => 'nullable|date',
+            'products' => 'nullable|array'
+        ]);
+
+        $goal = Goal::create([
+            'user_id' => Auth::id(),
+            'name' => $request->name,
+            'target_amount' => $request->target_amount,
+            'target_date' => $request->target_date,
+            'current_amount' => 0
+        ]);
+
+        if ($request->has('products')) {
+            $goal->products()->sync($request->products);
+        }
+
+        return redirect()->back()->with('success', 'Goal berhasil dibuat!');
+    }
+
+    public function updateGoal(Request $request, $id)
+{
+    // Debug: lihat data yang dikirim
+    \Log::info('Update Goal Request:', $request->all());
+    
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'target_amount' => 'required|numeric|min:0',
+        'target_date' => 'nullable|date',
+        'products' => 'nullable|array'
+    ]);
+    
+    // Cari goal berdasarkan user
+    $goal = Goal::where('user_id', Auth::id())->find($id);
+    
+    if (!$goal) {
+        \Log::error('Goal not found or unauthorized', ['goal_id' => $id, 'user_id' => Auth::id()]);
+        return redirect()->back()->with('error', 'Goal tidak ditemukan atau tidak memiliki akses!');
+    }
+    
+    \Log::info('Goal found:', ['goal' => $goal->toArray()]);
+    
+    // Update goal
+    $updateData = [
+        'name' => $request->name,
+        'target_amount' => $request->target_amount,
+        'target_date' => $request->target_date
+    ];
+    
+    \Log::info('Goal update data:', $updateData);
+    
+    $goal->update($updateData);
+    
+    // Sync products
+    if ($request->has('products')) {
+        \Log::info('Syncing products:', ['products' => $request->products]);
+        $goal->products()->sync($request->products);
+    } else {
+        \Log::info('No products selected, detaching all');
+        $goal->products()->detach();
+    }
+    
+    // Refresh model untuk melihat perubahan
+    $goal->refresh();
+    \Log::info('Goal after update:', $goal->toArray());
+    
+    return redirect()->back()->with('success', 'Goal berhasil diperbarui!');
+}
+
+    public function destroyGoal($id)
+    {
+        $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
+        $goal->delete();
+
+        return redirect()->back()->with('success', 'Goal berhasil dihapus!');
     }
 }

@@ -88,7 +88,6 @@ class PortfolioController extends Controller
         $data = $products->map(function ($product) {
             $txs = $product->transactions->where('user_id', Auth::id());
 
-            // Gunakan logika yang sama untuk menghitung unit & modal
             $buyUnits = $txs->whereIn('type', ['beli', 'dividen_unit', 'stock_split', 'right_issue'])->sum('amount');
             $buyMoney = $txs->whereIn('type', ['beli', 'right_issue'])->sum('total_value');
             $sellUnits = $txs->whereIn('type', ['jual', 'reverse_split'])->sum('amount');
@@ -107,6 +106,11 @@ class PortfolioController extends Controller
                 'category'      => $product->category,
                 'quantity'      => $units,
                 'current_price' => $product->current_price ?? 0,
+                
+                // --- TAMBAHKAN BARIS INI ---
+                'updated_at'    => $product->updated_at, 
+                // ---------------------------
+
                 'total_cost'    => $totalCost,
                 'market_value'  => $units * ($product->current_price ?? 0),
             ];

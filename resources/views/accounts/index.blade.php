@@ -30,7 +30,7 @@
         @endif
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            @php $totalSaldo = $accounts->sum('balance'); @endphp
+            @php $totalSaldo = isset($accounts) ? $accounts->sum('balance') : 0; @endphp
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
                 <div class="p-4 bg-teal-50 text-teal-600 rounded-2xl text-2xl border border-teal-100">
                     💰
@@ -56,7 +56,8 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
-                    @forelse($accounts as $account)
+                    @if(isset($accounts) && $accounts->count() > 0)
+                    @foreach($accounts as $account)
                     <tr class="hover:bg-slate-50 transition group">
                         <td class="p-5">
                             <div class="flex items-center gap-3">
@@ -74,13 +75,26 @@
                         <td class="p-5 text-right font-black text-teal-600 text-base">
                             Rp {{ number_format($account->balance, 0, ',', '.') }}
                         </td>
-                        <td class="p-5 text-center">
-                            <button class="text-slate-300 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-lg">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
+                        <td class="p-5 text-center flex justify-center gap-2">
+                            <a href="{{ route('transactions.index', ['account_id' => $account->id]) }}"
+                                class="text-slate-400 hover:text-indigo-600 transition p-2 hover:bg-indigo-50 rounded-lg"
+                                title="Lihat Riwayat Transaksi">
+                                <i class="fas fa-history"></i>
+                            </a>
+
+                            <form action="{{ route('accounts.destroy', $account->id) }}" method="POST"
+                                onsubmit="return confirm('Hapus rekening ini? Semua riwayat transaksi terkait juga akan terhapus.');">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                    class="text-slate-400 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-lg"
+                                    title="Hapus Akun">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
-                    @empty
+                    @endforeach
+                    @else
                     <tr>
                         <td colspan="4" class="p-16 text-center">
                             <div class="flex flex-col items-center justify-center text-slate-300">
@@ -90,7 +104,7 @@
                             </div>
                         </td>
                     </tr>
-                    @endforelse
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -111,7 +125,7 @@
                 </button>
             </div>
 
-            <form action="/accounts" method="POST" class="space-y-5">
+            <form action="{{ route('accounts.store') }}" method="POST" class="space-y-5">
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Nama Aplikasi /
