@@ -1,0 +1,115 @@
+/* SIDEBAR STYLES */
+.sidebar-container {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 280px;
+    height: 100vh;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+    background: white;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-container.active {
+    left: 0;
+    transform: translateX(0);
+}
+
+/* Tombol Toggle */
+.sidebar-toggle-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1001;
+    width: 50px;
+    height: 50px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-toggle-btn:hover {
+    background: #4f46e5;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Untuk desktop - tombol di sebelah sidebar */
+@media (min-width: 768px) {
+    .sidebar-container {
+        left: 0;
+        transform: translateX(0);
+    }
+
+    .sidebar-toggle-btn {
+        left: 300px;
+        display: none; /* Sembunyikan di desktop jika sidebar selalu terbuka */
+    }
+}
+
+/* Overlay untuk mobile */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Main content */
+.main-content-full {
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+    .main-content-full {
+        padding-left: 300px;
+        padding-right: 30px;
+    }
+}
+
+/* Floating button untuk mobile */
+.fab-toggle {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    z-index: 998;
+    transition: all 0.3s;
+}
+
+@media (min-width: 769px) {
+    .fab-toggle {
+        display: none;
+    }
+}
