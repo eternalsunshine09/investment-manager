@@ -12,15 +12,15 @@ return new class extends Migration
     public function up()
 {
     Schema::create('watchlists', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
-        $table->string('code'); // Kode: BBCA, BTC
-        $table->string('name')->nullable(); // Nama: Bank Central Asia
-        $table->decimal('target_price', 15, 2); // Harga Incaran
-        $table->decimal('current_price', 15, 2)->nullable(); // Harga Pasar (Manual update dulu)
-        $table->text('note')->nullable(); // Alasan beli: "Tunggu support kuat"
-        $table->timestamps();
-    });
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->string('code');
+    $table->string('name')->nullable();
+    $table->decimal('target_price', 15, 2);
+    $table->decimal('current_price', 15, 2)->nullable();
+    $table->text('note')->nullable();
+    $table->timestamps();
+});
 }
 
     /**
