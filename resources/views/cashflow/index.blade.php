@@ -13,6 +13,7 @@
     }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     [x-cloak] {
         display: none !important;
     }
@@ -246,6 +247,67 @@
                 </button>
             </form>
         </div>
+=======
+@section('content')
+<div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+    <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+        <h3 class="font-bold text-lg text-slate-800">Riwayat Cashflow</h3>
+        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{{ count($flows ?? []) }}
+            Data</span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead
+                class="bg-slate-50 text-slate-500 text-xs uppercase font-extrabold tracking-wider border-b border-slate-100">
+                <tr>
+                    <th class="px-6 py-4">Tanggal</th>
+                    <th class="px-6 py-4">Akun</th>
+                    <th class="px-6 py-4">Kategori</th>
+                    <th class="px-6 py-4">Keterangan</th>
+                    <th class="px-6 py-4 text-right">Nominal</th>
+                    <th class="px-6 py-4"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @forelse($flows ?? [] as $flow)
+                <tr class="hover:bg-slate-50 transition duration-150 group">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold text-slate-700 block">{{ $flow->date->format('d') }}</span>
+                        <span class="text-xs text-slate-400 font-bold uppercase">{{ $flow->date->format('M Y') }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-bold text-indigo-600">
+                        {{ $flow->account->name ?? 'Unknown' }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 {{ $flow->type == 'income' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                            {{ $flow->type == 'income' ? '💰' : '💸' }} {{ $flow->category }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500 truncate max-w-xs">{{ $flow->description ?? '-' }}</td>
+                    <td
+                        class="px-6 py-4 text-right font-black whitespace-nowrap {{ $flow->type == 'income' ? 'text-emerald-600' : 'text-slate-800' }}">
+                        {{ $flow->type == 'income' ? '+' : '-' }} Rp {{ number_format($flow->amount, 0, ',', '.') }}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <form action="{{ route('cashflow.destroy', $flow->id) }}" method="POST"
+                            onsubmit="return confirm('Hapus transaksi ini? Saldo akan dikembalikan.')">
+                            @csrf @method('DELETE')
+                            <button type="submit"
+                                class="text-slate-300 hover:text-rose-500 p-2 rounded-full hover:bg-rose-50 transition"><i
+                                    class="fas fa-trash-alt"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-400">Belum ada data.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+>>>>>>> Stashed changes
     </div>
 
     <script>
@@ -418,5 +480,9 @@
     </div>
 </div>
 </div>
+<<<<<<< Updated upstream
+@endsection
+>>>>>>> Stashed changes
+=======
 @endsection
 >>>>>>> Stashed changes
