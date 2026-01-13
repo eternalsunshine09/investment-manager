@@ -43,6 +43,11 @@
                     class="block py-2 text-sm font-bold {{ Request::routeIs('accounts.*') ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600' }}">
                     💳 Rekening / RDN
                 </a>
+                <a href="{{ route('foreign-accounts.index') }}"
+                    class="flex items-center p-3 text-slate-600 rounded-xl hover:bg-sky-50 hover:text-sky-600 group {{ request()->routeIs('foreign-accounts.*') ? 'bg-sky-50 text-sky-600' : '' }}">
+                    <i class="fas fa-globe-americas w-6 text-center"></i>
+                    <span class="ml-3 font-bold">Dompet Valas</span>
+                </a>
             </div>
         </div>
 
@@ -51,6 +56,11 @@
         <a href="{{ route('transactions.index') }}"
             class="nav-item {{ Request::routeIs('transactions.*') ? 'active' : '' }}">
             <i class="fas fa-exchange-alt w-6 text-center mr-2 text-orange-500"></i> Transaksi
+        </a>
+        <a href="{{ route('conversion.index') }}"
+            class="flex items-center p-3 text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 group {{ request()->routeIs('conversion.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+            <i class="fas fa-sync-alt w-6 text-center"></i>
+            <span class="ml-3 font-bold">Konversi Kurs</span>
         </a>
         <a href="{{ route('cashflow.index') }}" class="nav-item {{ Request::routeIs('cashflow.*') ? 'active' : '' }}">
             <i class="fas fa-wallet w-6 text-center mr-2 text-purple-500"></i> Arus Kas

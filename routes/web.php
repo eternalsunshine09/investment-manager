@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
     AuthController, DashboardController, ProductController, 
     TransactionController, ReportController, PortfolioController, 
-    AccountController, ToolController, CashFlowController, WatchlistController, GoalController
+    AccountController, ToolController, CashFlowController, WatchlistController, 
+    GoalController, ConversionController, ForeignAccountController
 };
 
 /*
@@ -84,4 +85,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/goals', [GoalController::class, 'store'])->name('goals.store');
     Route::put('/goals/{goal}', [GoalController::class, 'update'])->name('goals.update');
     Route::delete('/goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
+
+    // --- FITUR KONVERSI KURS ---
+    Route::get('/conversion', [ConversionController::class, 'index'])->name('conversion.index');
+    Route::post('/conversion', [ConversionController::class, 'store'])->name('conversion.store');
+
+    // Route Khusus Valas
+    Route::get('/foreign-accounts', [ForeignAccountController::class, 'index'])->name('foreign-accounts.index');
 });

@@ -12,6 +12,7 @@
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
+<<<<<<< Updated upstream
     [x-cloak] {
         display: none !important;
     }
@@ -264,3 +265,158 @@
 </body>
 
 </html>
+=======
+@section('content')
+<div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+    <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+        <h3 class="font-bold text-lg text-slate-800">Riwayat Cashflow</h3>
+        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{{ count($flows ?? []) }}
+            Data</span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead
+                class="bg-slate-50 text-slate-500 text-xs uppercase font-extrabold tracking-wider border-b border-slate-100">
+                <tr>
+                    <th class="px-6 py-4">Tanggal</th>
+                    <th class="px-6 py-4">Akun</th>
+                    <th class="px-6 py-4">Kategori</th>
+                    <th class="px-6 py-4">Keterangan</th>
+                    <th class="px-6 py-4 text-right">Nominal</th>
+                    <th class="px-6 py-4"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @forelse($flows ?? [] as $flow)
+                <tr class="hover:bg-slate-50 transition duration-150 group">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold text-slate-700 block">{{ $flow->date->format('d') }}</span>
+                        <span class="text-xs text-slate-400 font-bold uppercase">{{ $flow->date->format('M Y') }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-bold text-indigo-600">
+                        {{ $flow->account->name ?? 'Unknown' }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 {{ $flow->type == 'income' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                            {{ $flow->type == 'income' ? '💰' : '💸' }} {{ $flow->category }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500 truncate max-w-xs">{{ $flow->description ?? '-' }}</td>
+                    <td
+                        class="px-6 py-4 text-right font-black whitespace-nowrap {{ $flow->type == 'income' ? 'text-emerald-600' : 'text-slate-800' }}">
+                        {{ $flow->type == 'income' ? '+' : '-' }} Rp {{ number_format($flow->amount, 0, ',', '.') }}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <form action="{{ route('cashflow.destroy', $flow->id) }}" method="POST"
+                            onsubmit="return confirm('Hapus transaksi ini? Saldo akan dikembalikan.')">
+                            @csrf @method('DELETE')
+                            <button type="submit"
+                                class="text-slate-300 hover:text-rose-500 p-2 rounded-full hover:bg-rose-50 transition"><i
+                                    class="fas fa-trash-alt"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-400">Belum ada data.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+<div x-show="showModal" x-cloak
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+    x-transition.opacity>
+    <div @click.away="showModal = false"
+        class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto">
+
+        <div class="px-8 pt-8 pb-4 flex justify-between items-center bg-white sticky top-0 z-10">
+            <h3 class="text-2xl font-black text-slate-800 tracking-tight">Catat Cashflow</h3>
+            <button @click="showModal = false"
+                class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition flex items-center justify-center"><i
+                    class="fas fa-times text-lg"></i></button>
+        </div>
+
+        <form action="{{ route('cashflow.store') }}" method="POST" class="px-8 pb-8 space-y-5">
+            @csrf
+
+            <div class="grid grid-cols-2 gap-4 p-1 bg-slate-100 rounded-2xl" x-data="{ type: 'expense' }">
+                <label class="cursor-pointer">
+                    <input type="radio" name="type" value="income" class="peer sr-only" x-model="type">
+                    <div
+                        class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-emerald-600 peer-checked:shadow-sm transition-all">
+                        💰 Pemasukan</div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="type" value="expense" class="peer sr-only" x-model="type">
+                    <div
+                        class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-rose-500 peer-checked:shadow-sm transition-all">
+                        💸 Pengeluaran</div>
+                </label>
+            </div>
+
+            <div>
+                <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Sumber Dana /
+                    Akun</label>
+                <div class="relative">
+                    <select name="account_id" required
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
+                        <option value="" disabled selected>-- Pilih Akun --</option>
+
+                        <optgroup label="Dompet & Bank (Operasional)">
+                            @foreach($accounts->where('type', '!=', 'rdn') as $acc) <option value="{{ $acc->id }}">
+                                {{ $acc->name }} (Rp {{ number_format($acc->balance, 0, ',', '.') }})</option>
+                            @endforeach
+                        </optgroup>
+
+                        <optgroup label="RDN & Investasi">
+                            @foreach($accounts->where('type', 'rdn') as $acc) <option value="{{ $acc->id }}">
+                                {{ $acc->name }} (Rp {{ number_format($acc->balance, 0, ',', '.') }})</option>
+                            @endforeach
+                        </optgroup>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500"><i
+                            class="fas fa-chevron-down text-xs"></i></div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Tanggal</label>
+                <input type="date" name="date" value="{{ date('Y-m-d') }}"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Kategori</label>
+                    <input type="text" name="category" placeholder="Contoh: Makan" required
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Nominal</label>
+                    <input type="number" name="amount" placeholder="Rp 0" required
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Keterangan
+                    (Opsional)</label>
+                <input type="text" name="description" placeholder="Catatan tambahan..."
+                    class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">Simpan
+                Cashflow</button>
+        </form>
+    </div>
+</div>
+</div>
+@endsection
+>>>>>>> Stashed changes
