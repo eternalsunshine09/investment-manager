@@ -11,7 +11,7 @@
                 <h1 class="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                     <span class="text-indigo-500">📊</span> Laporan & Analisis
                 </h1>
-                <p class="text-slate-500 font-medium mt-1">Ringkasan performa investasi dan riwayat transaksi.</p>
+                <p class="text-slate-500 font-medium mt-1">Ringkasan performa investasi dan biaya transaksi.</p>
             </div>
 
             <div class="flex gap-3">
@@ -81,14 +81,15 @@
                 <p class="text-orange-500 text-[10px] font-bold uppercase tracking-wider mb-1">Total Penjualan</p>
                 <h3 class="text-xl font-black text-slate-800">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</h3>
             </div>
-            <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100">
-                <p class="text-purple-500 text-[10px] font-bold uppercase tracking-wider mb-1">Total Fee Broker</p>
+            <div class="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 relative overflow-hidden">
+                <div class="absolute right-0 top-0 p-4 opacity-5"><i class="fas fa-receipt text-6xl text-rose-500"></i>
+                </div>
+                <p class="text-rose-500 text-[10px] font-bold uppercase tracking-wider mb-1">Total Fee Broker</p>
                 <h3 class="text-xl font-black text-slate-800">Rp {{ number_format($totalFee, 0, ',', '.') }}</h3>
             </div>
             <div
                 class="bg-gradient-to-br from-indigo-600 to-blue-500 p-5 rounded-[1.5rem] shadow-lg shadow-indigo-200 text-white">
-                <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-wider mb-1">Realized Profit (Global)
-                </p>
+                <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-wider mb-1">Net Cashflow</p>
                 <h3 class="text-xl font-black">
                     {{ $totalRealizedProfit >= 0 ? '+' : '' }}Rp {{ number_format($totalRealizedProfit, 0, ',', '.') }}
                 </h3>
@@ -98,7 +99,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             <div class="lg:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                 <h2 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                    <span>📈</span> Tren Transaksi (Semester 1)
+                    <span>📈</span> Tren Transaksi (Tahunan)
                 </h2>
                 <div class="relative h-72 w-full">
                     <canvas id="investmentChart"></canvas>
@@ -128,7 +129,8 @@
                             <th class="px-6 py-4 font-bold">Jenis</th>
                             <th class="px-6 py-4 font-bold">Produk</th>
                             <th class="px-6 py-4 font-bold">Akun</th>
-                            <th class="px-6 py-4 font-bold text-right">Total Nilai</th>
+                            <th class="px-6 py-4 font-bold text-right text-rose-500">Fee</th>
+                            <th class="px-6 py-4 font-bold text-right">Total Net</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-sm">
@@ -140,19 +142,33 @@
                             <td class="px-6 py-4">
                                 <span
                                     class="px-3 py-1 rounded-lg text-xs font-bold border 
-                                    {{ in_array($t->type, ['beli', 'topup']) ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-orange-50 text-orange-700 border-orange-100' }}">
+                                    {{ in_array($t->type, ['beli', 'topup']) ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : '' }}
+                                    {{ in_array($t->type, ['jual', 'tarik']) ? 'bg-orange-50 text-orange-700 border-orange-100' : '' }}
+                                    {{ in_array($t->type, ['dividen_cash']) ? 'bg-blue-50 text-blue-700 border-blue-100' : '' }}">
                                     {{ ucfirst(str_replace('_', ' ', $t->type)) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 font-bold text-slate-700">{{ optional($t->product)->name ?? '-' }}</td>
+                            <td class="px-6 py-4 font-bold text-slate-700">{{ optional($t->product)->code ?? '-' }}</td>
                             <td class="px-6 py-4 text-slate-500">{{ optional($t->account)->name ?? '-' }}</td>
+
+                            <td class="px-6 py-4 text-right text-rose-500 font-medium">
+                                @if($t->fee > 0)
+                                ({{ number_format($t->fee, 0, ',', '.') }})
+                                @else
+                                -
+                                @endif
+                            </td>
+
                             <td class="px-6 py-4 text-right font-black text-slate-800">
-                                Rp {{ number_format($t->total_value, 0, ',', '.') }}
+                                <span
+                                    class="{{ in_array($t->type, ['jual', 'topup', 'dividen_cash']) ? 'text-emerald-600' : 'text-slate-800' }}">
+                                    Rp {{ number_format($t->total_value, 0, ',', '.') }}
+                                </span>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-slate-400">
+                            <td colspan="6" class="px-6 py-10 text-center text-slate-400">
                                 <div class="flex flex-col items-center">
                                     <i class="fas fa-inbox text-4xl mb-3 text-slate-200"></i>
                                     <p class="text-sm font-medium">Belum ada transaksi di periode ini.</p>
@@ -172,13 +188,11 @@
         x-transition.opacity>
         <div @click.away="showImportModal = false"
             class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden p-8">
-
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-black text-slate-800">📤 Import Transaksi</h3>
                 <button @click="showImportModal = false" class="text-slate-400 hover:text-slate-600 transition"><i
                         class="fas fa-times text-xl"></i></button>
             </div>
-
             <form action="{{ route('reports.import') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-6 text-xs text-indigo-800">
@@ -188,20 +202,17 @@
                         <li>Pastikan kode produk sudah ada di Master Data.</li>
                     </ul>
                 </div>
-
                 <div class="mb-6">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">File CSV</label>
                     <input type="file" name="file" accept=".csv" required
                         class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
                 </div>
-
                 <div class="flex justify-end gap-3">
                     <button type="button" @click="showImportModal = false"
                         class="text-slate-500 font-bold px-4 py-3 hover:bg-slate-50 rounded-xl transition">Batal</button>
                     <button type="submit"
-                        class="bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition transform hover:-translate-y-1">
-                        Upload & Import
-                    </button>
+                        class="bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition transform hover:-translate-y-1">Upload
+                        & Import</button>
                 </div>
             </form>
         </div>
@@ -211,15 +222,10 @@
 
 @push('scripts')
 @php
-// =============================
-// SIAPKAN DATA DI PHP (AMAN)
-// =============================
-
-// Line chart (12 bulan)
+// PREPARE DATA FOR CHART.JS
 $buyData = array_values($buyChart);
 $sellData = array_values($sellChart);
 
-// Donut chart (alokasi aset)
 if ($allocation instanceof \Illuminate\Support\Collection) {
 $donutLabels = $allocation->keys()->values();
 $donutValues = $allocation->values();
@@ -230,51 +236,38 @@ $donutValues = array_values((array) $allocation);
 @endphp
 
 <script>
-/* =============================
-   DATA DARI PHP
-============================= */
 const buyData = @json($buyData);
 const sellData = @json($sellData);
 const allocationLabels = @json($donutLabels);
 const allocationValues = @json($donutValues);
 
-/* =============================
-   LABEL 12 BULAN
-============================= */
-const monthLabels = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-];
+const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-/* =============================
-   LINE CHART (1 TAHUN)
-============================= */
+// LINE CHART
 const ctx = document.getElementById('investmentChart').getContext('2d');
 new Chart(ctx, {
     type: 'line',
     data: {
         labels: monthLabels,
         datasets: [{
-                label: 'Pembelian',
-                data: buyData,
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16,185,129,0.1)',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true,
-                pointRadius: 3
-            },
-            {
-                label: 'Penjualan',
-                data: sellData,
-                borderColor: '#f97316',
-                backgroundColor: 'rgba(249,115,22,0.1)',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true,
-                pointRadius: 3
-            }
-        ]
+            label: 'Pembelian',
+            data: buyData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3
+        }, {
+            label: 'Penjualan',
+            data: sellData,
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249,115,22,0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3
+        }]
     },
     options: {
         responsive: true,
@@ -292,9 +285,7 @@ new Chart(ctx, {
     }
 });
 
-/* =============================
-   DOUGHNUT CHART (ALOKASI)
-============================= */
+// DONUT CHART
 const ctx2 = document.getElementById('allocationChart').getContext('2d');
 new Chart(ctx2, {
     type: 'doughnut',
@@ -302,9 +293,8 @@ new Chart(ctx2, {
         labels: allocationLabels,
         datasets: [{
             data: allocationValues,
-            backgroundColor: [
-                '#4f46e5', '#10b981', '#f59e0b',
-                '#ef4444', '#8b5cf6', '#ec4899'
+            backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899',
+                '#6366f1'
             ],
             borderWidth: 0,
             hoverOffset: 8

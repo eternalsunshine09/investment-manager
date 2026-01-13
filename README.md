@@ -112,5 +112,5 @@ Ikuti langkah ini untuk menjalankan proyek di komputer lokal:
 
 ## 👨‍💻 Author
 
-Dibuat dengan ❤️ oleh **Oja**.
+Dibuat dengan ❤️ Yudi (@eternalsunshine09) oleh **Oja**.
 Proyek ini dikembangkan untuk keperluan manajemen investasi pribadi dan pembelajaran Web Development.
