@@ -39,8 +39,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
-// --- 3. PROTECTED ROUTES (Hanya untuk yang SUDAH Login) ---
-Route::middleware(['auth'])->group(function () {
+    // --- 3. PROTECTED ROUTES (Hanya untuk yang SUDAH Login) ---
+    Route::middleware(['auth'])->group(function () {
 
     // Proses Keluar (Logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     // RESOURCE ROUTES (Produk, Rekening, Transaksi)
     Route::resource('products', ProductController::class);
     Route::resource('accounts', AccountController::class);
+    Route::get('/accounts/{id}', [AccountController::class, 'show'])->name('accounts.show');
     Route::resource('transactions', TransactionController::class);
 
     // LAPORAN
