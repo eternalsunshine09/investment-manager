@@ -108,8 +108,6 @@ Ikuti langkah ini untuk menjalankan proyek di komputer lokal:
 
 ## 📸 Screenshots
 
-_(Tambahkan screenshot dashboard kamu di sini nanti)_
-
 ---
 
 ## 👨‍💻 Author

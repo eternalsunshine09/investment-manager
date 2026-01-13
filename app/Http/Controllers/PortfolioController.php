@@ -27,7 +27,7 @@ class PortfolioController extends Controller
                 ->where('product_id', $product->id)
                 ->get();
 
-            // --- UPDATE LOGIKA PERHITUNGAN (Support Corporate Action) ---
+            // --- LOGIKA PERHITUNGAN (Support Corporate Action) ---
             
             // 1. Total Unit Masuk (Beli + Bonus Saham + Stock Split + Right Issue)
             $totalBuyUnits = $txs->whereIn('type', ['beli', 'dividen_unit', 'stock_split', 'right_issue'])->sum('amount');
@@ -60,6 +60,7 @@ class PortfolioController extends Controller
 
             $summary[] = [
                 'code'          => $product->code ?? $product->name,
+                'name'          => $product->name, // <--- PERBAIKAN: Menambahkan key 'name'
                 'category'      => $product->category,
                 'units'         => $currentUnits,
                 'avg_price'     => $avgPrice,
@@ -106,11 +107,7 @@ class PortfolioController extends Controller
                 'category'      => $product->category,
                 'quantity'      => $units,
                 'current_price' => $product->current_price ?? 0,
-                
-                // --- TAMBAHKAN BARIS INI ---
-                'updated_at'    => $product->updated_at, 
-                // ---------------------------
-
+                'updated_at'    => $product->updated_at,
                 'total_cost'    => $totalCost,
                 'market_value'  => $units * ($product->current_price ?? 0),
             ];
