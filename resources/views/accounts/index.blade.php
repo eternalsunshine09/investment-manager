@@ -3,7 +3,12 @@
 @section('title', 'Rekening & RDN - Porto Tracking')
 
 @section('content')
-<div class="h-full overflow-y-auto pt-20 md:pt-8 pb-10 px-4" x-data="{ showModal: false }">
+<div class="h-full overflow-y-auto pt-20 md:pt-8 pb-10 px-4" x-data="{ 
+        showModal: false, 
+        isEdit: false, 
+        form: { id: '', name: '', bank_name: '' } 
+     }">
+
     <div class="max-w-[1600px] mx-auto">
 
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -15,7 +20,7 @@
                 </p>
             </div>
 
-            <button @click="showModal = true"
+            <button @click="showModal = true; isEdit = false; form = { id: '', name: '', bank_name: '' }"
                 class="bg-teal-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-teal-500/30 hover:bg-teal-700 hover:scale-105 transition flex items-center gap-2">
                 <i class="fas fa-plus"></i> Tambah Rekening
             </button>
@@ -77,16 +82,28 @@
                         </td>
                         <td class="p-5 text-center flex justify-center gap-2">
                             <a href="{{ route('transactions.index', ['account_id' => $account->id]) }}"
-                                class="text-slate-400 hover:text-indigo-600 transition p-2 hover:bg-indigo-50 rounded-lg"
-                                title="Lihat Riwayat Transaksi">
+                                class="text-slate-300 hover:text-teal-600 transition p-2 hover:bg-teal-50 rounded-lg"
+                                title="Lihat Riwayat">
                                 <i class="fas fa-history"></i>
                             </a>
+
+                            <button @click="showModal = true; 
+                                                isEdit = true; 
+                                                form = { 
+                                                    id: '{{ $account->id }}', 
+                                                    name: '{{ $account->name }}', 
+                                                    bank_name: '{{ $account->bank_name }}' 
+                                                }"
+                                class="text-slate-300 hover:text-indigo-600 transition p-2 hover:bg-indigo-50 rounded-lg"
+                                title="Edit Akun">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
 
                             <form action="{{ route('accounts.destroy', $account->id) }}" method="POST"
                                 onsubmit="return confirm('Hapus rekening ini? Semua riwayat transaksi terkait juga akan terhapus.');">
                                 @csrf @method('DELETE')
                                 <button type="submit"
-                                    class="text-slate-400 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-lg"
+                                    class="text-slate-300 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-lg"
                                     title="Hapus Akun">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
@@ -119,30 +136,34 @@
             class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden p-8 transform transition-all">
 
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-slate-800">🏦 Tambah Akun Baru</h3>
+                <h3 class="text-xl font-bold text-slate-800" x-text="isEdit ? '✏️ Edit Akun' : '🏦 Tambah Akun Baru'">
+                </h3>
                 <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 transition">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
 
-            <form action="{{ route('accounts.store') }}" method="POST" class="space-y-5">
+            <form x-bind:action="isEdit ? '/accounts/' + form.id : '{{ route('accounts.store') }}'" method="POST"
+                class="space-y-5">
                 @csrf
+                <template x-if="isEdit"><input type="hidden" name="_method" value="PUT"></template>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Nama Aplikasi /
                         Sekuritas</label>
-                    <input type="text" name="name" placeholder="Contoh: BCA Sekuritas, Bibit"
+                    <input type="text" name="name" x-model="form.name" placeholder="Contoh: BCA Sekuritas, Bibit"
                         class="w-full border border-slate-200 p-3.5 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition outline-none font-bold text-slate-700"
                         required>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Info Bank / RDN</label>
-                    <input type="text" name="bank_name" placeholder="Contoh: RDN BCA"
+                    <input type="text" name="bank_name" x-model="form.bank_name" placeholder="Contoh: RDN BCA"
                         class="w-full border border-slate-200 p-3.5 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition outline-none font-medium text-slate-700"
                         required>
                 </div>
 
-                <div class="bg-blue-50 p-4 rounded-xl flex gap-3 items-start border border-blue-100">
+                <div x-show="!isEdit" class="bg-blue-50 p-4 rounded-xl flex gap-3 items-start border border-blue-100">
                     <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
                     <p class="text-xs text-blue-700 font-medium leading-relaxed">
                         Saldo awal otomatis <b>Rp 0</b>. <br>
@@ -152,7 +173,7 @@
 
                 <button type="submit"
                     class="w-full bg-teal-600 text-white font-bold py-4 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-500/30 transition transform hover:-translate-y-1">
-                    Simpan Akun
+                    <span x-text="isEdit ? 'Simpan Perubahan' : 'Simpan Akun'"></span>
                 </button>
             </form>
         </div>

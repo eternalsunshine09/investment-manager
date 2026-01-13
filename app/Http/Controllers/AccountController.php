@@ -8,17 +8,12 @@ use Illuminate\Support\Facades\Auth;
 
 class AccountController extends Controller
 {
-    // TAMPILKAN DAFTAR AKUN
     public function index()
     {
-        // Ambil semua akun milik user login
         $accounts = Account::where('user_id', Auth::id())->get();
-
-        // Kirim variabel '$accounts' (JAMAK) ke view
         return view('accounts.index', compact('accounts'));
     }
 
-    // SIMPAN AKUN BARU
     public function store(Request $request)
     {
         $request->validate([
@@ -30,21 +25,34 @@ class AccountController extends Controller
             'user_id' => Auth::id(),
             'name' => $request->name,
             'bank_name' => $request->bank_name,
-            'balance' => 0 // Saldo awal selalu 0, harus Top Up via Transaksi
+            'balance' => 0 // Saldo awal 0
         ]);
 
         return back()->with('success', 'Rekening berhasil ditambahkan!');
     }
 
-    // HAPUS AKUN
+    // --- TAMBAHKAN FUNGSI INI ---
+    public function update(Request $request, $id)
+    {
+        $account = Account::where('user_id', Auth::id())->findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'bank_name' => 'required|string|max:255',
+        ]);
+
+        $account->update([
+            'name' => $request->name,
+            'bank_name' => $request->bank_name,
+        ]);
+
+        return back()->with('success', 'Rekening berhasil diperbarui!');
+    }
+    // -----------------------------
+
     public function destroy($id)
     {
         $account = Account::where('user_id', Auth::id())->findOrFail($id);
-        
-        // Cek apakah akun ini punya transaksi?
-        // Jika ingin aman, bisa dicek dulu. Tapi karena di database kita pakai cascadeOnDelete,
-        // maka transaksi terkait akan ikut terhapus otomatis.
-        
         $account->delete();
 
         return back()->with('success', 'Rekening berhasil dihapus.');
