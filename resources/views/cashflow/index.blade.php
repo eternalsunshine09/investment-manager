@@ -9,6 +9,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
                 <h1 class="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+<<<<<<< Updated upstream
                     <span class="text-indigo-600">💸</span> Arus Kas Bulanan
                 </h1>
                 <p class="text-slate-500 font-medium mt-1">Monitor pemasukan & pengeluaran bulananmu.</p>
@@ -156,36 +157,145 @@
                     class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition flex items-center justify-center">
                     <i class="fas fa-times text-lg"></i>
                 </button>
+=======
+                    <span class="text-indigo-600">💸</span> Arus Kas
+                </h1>
+                <p class="text-slate-500 font-medium mt-1">Monitor uang masuk dan keluar di semua rekeningmu.</p>
+>>>>>>> Stashed changes
             </div>
+            <button @click="showModal = true"
+                class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Catat Transaksi
+            </button>
+        </div>
 
+<<<<<<< Updated upstream
             <form action="{{ route('cashflow.store') }}" method="POST" class="px-8 pb-8 space-y-5">
+=======
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Riwayat Transaksi</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead
+                        class="bg-slate-50 text-slate-500 text-xs uppercase font-extrabold tracking-wider border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-4">Tanggal</th>
+                            <th class="px-6 py-4">Akun</th>
+                            <th class="px-6 py-4">Kategori</th>
+                            <th class="px-6 py-4 text-right">Nominal</th>
+                            <th class="px-6 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($flows as $flow)
+                        <tr class="hover:bg-slate-50 transition duration-150 group">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span
+                                    class="font-bold text-slate-700 block">{{ \Carbon\Carbon::parse($flow->date)->format('d M Y') }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <span
+                                    class="font-bold {{ $flow->account->type == 'rdn' ? 'text-teal-600' : 'text-indigo-600' }}">
+                                    {{ $flow->account->name }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span
+                                    class="px-3 py-1 rounded-lg text-xs font-bold {{ $flow->type == 'income' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                    {{ $flow->type == 'income' ? '💰' : '💸' }} {{ $flow->category }}
+                                </span>
+                            </td>
+                            <td
+                                class="px-6 py-4 text-right font-black {{ $flow->type == 'income' ? 'text-emerald-600' : 'text-slate-800' }}">
+                                {{ $flow->type == 'income' ? '+' : '-' }} Rp
+                                {{ number_format($flow->amount, 0, ',', '.') }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <form action="{{ route('cashflow.destroy', $flow->id) }}" method="POST"
+                                    onsubmit="return confirm('Hapus dan kembalikan saldo?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-slate-300 hover:text-rose-500 transition"><i
+                                            class="fas fa-trash-alt"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-400">Belum ada transaksi.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showModal" x-cloak
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div @click.away="showModal = false" class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8">
+            <h3 class="text-2xl font-black text-slate-800 mb-6">Catat Cashflow</h3>
+
+            <form action="{{ route('cashflow.store') }}" method="POST" class="space-y-5">
+>>>>>>> Stashed changes
                 @csrf
                 <div class="grid grid-cols-2 gap-4 p-1 bg-slate-100 rounded-2xl" x-data="{ type: 'expense' }">
                     <label class="cursor-pointer">
                         <input type="radio" name="type" value="income" class="peer sr-only" x-model="type">
                         <div
+<<<<<<< Updated upstream
                             class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-emerald-600 peer-checked:shadow-sm transition-all">
                             💰 Pemasukan
                         </div>
+=======
+                            class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-emerald-600">
+                            💰 Pemasukan</div>
+>>>>>>> Stashed changes
                     </label>
                     <label class="cursor-pointer">
                         <input type="radio" name="type" value="expense" class="peer sr-only" x-model="type">
                         <div
+<<<<<<< Updated upstream
                             class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-rose-500 peer-checked:shadow-sm transition-all">
                             💸 Pengeluaran
                         </div>
+=======
+                            class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-rose-500">
+                            💸 Pengeluaran</div>
+>>>>>>> Stashed changes
                     </label>
                 </div>
 
                 <div>
+<<<<<<< Updated upstream
                     <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Tanggal</label>
                     <input type="date" name="date" value="{{ date('Y-m-d') }}"
                         class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+=======
+                    <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Pilih Akun</label>
+                    <select name="account_id" required
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500">
+                        <optgroup label="🏦 Rekening Pribadi">
+                            @foreach($accounts->where('type', 'personal') as $acc)
+                            <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->balance) }})
+                            </option>
+                            @endforeach
+                        </optgroup>
+                        <optgroup label="📈 RDN & Investasi">
+                            @foreach($accounts->where('type', 'rdn') as $acc)
+                            <option value="{{ $acc->id }}">{{ $acc->name }} (Rp {{ number_format($acc->balance) }})
+                            </option>
+                            @endforeach
+                        </optgroup>
+                    </select>
+>>>>>>> Stashed changes
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Kategori</label>
+<<<<<<< Updated upstream
                         <input type="text" name="category" placeholder="Contoh: Makan" required
                             class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                     </div>
@@ -193,10 +303,22 @@
                         <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Nominal</label>
                         <input type="number" name="amount" placeholder="Rp 0" required
                             class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+=======
+                        <input type="text" name="category" placeholder="Makan, Gaji, dll"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 outline-none"
+                            required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Nominal</label>
+                        <input type="number" name="amount" placeholder="0"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 outline-none font-bold"
+                            required>
+>>>>>>> Stashed changes
                     </div>
                 </div>
 
                 <div>
+<<<<<<< Updated upstream
                     <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Keterangan
                         (Opsional)</label>
                     <input type="text" name="description" placeholder="Catatan tambahan..."
@@ -207,6 +329,17 @@
                     class="w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
                     Simpan Cashflow
                 </button>
+=======
+                    <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Tanggal</label>
+                    <input type="date" name="date" value="{{ date('Y-m-d') }}"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 outline-none"
+                        required>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-2xl hover:bg-indigo-700 transition">Simpan
+                    Transaksi</button>
+>>>>>>> Stashed changes
             </form>
         </div>
     </div>

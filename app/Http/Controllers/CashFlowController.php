@@ -22,10 +22,27 @@ class CashFlowController extends Controller
     return view('cashflow.index', compact('flows', 'income', 'expense', 'savingsRate'));
 }
 
+<<<<<<< Updated upstream
     public function store(Request $request)
     {
         CashFlow::create([
             'user_id' => Auth::id(),
+=======
+   public function store(Request $request)
+{
+    $request->validate([
+        'account_id' => 'required|exists:accounts,id',
+        'type' => 'required|in:income,expense',
+        'amount' => 'required|numeric|min:0',
+        'date' => 'required|date',
+    ]);
+
+    DB::transaction(function () use ($request) {
+        // 1. Simpan Transaksi ke Riwayat Cashflow
+        CashFlow::create([
+            'user_id' => Auth::id(),
+            'account_id' => $request->account_id,
+>>>>>>> Stashed changes
             'type' => $request->type,
             'category' => $request->category,
             'amount' => $request->amount,
@@ -33,8 +50,22 @@ class CashFlowController extends Controller
             'description' => $request->description
         ]);
 
+<<<<<<< Updated upstream
         return back()->with('success', 'Data berhasil dicatat!');
     }
+=======
+        // 2. Update Saldo Akun yang dipilih
+        $account = Account::find($request->account_id);
+        if ($request->type == 'income') {
+            $account->increment('balance', $request->amount); // Saldo +
+        } else {
+            $account->decrement('balance', $request->amount); // Saldo -
+        }
+    });
+
+    return back()->with('success', 'Transaksi berhasil dicatat & saldo diperbarui!');
+}
+>>>>>>> Stashed changes
 
     public function destroy($id)
     {
