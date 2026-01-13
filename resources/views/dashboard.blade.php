@@ -337,29 +337,41 @@
 <script>
 function chartComponent() {
     return {
-        activeFilter: '1Y',
+        activeFilter: '1Y', // Default 1 Tahun
         isLoading: false,
         chartInstance: null,
         allData: @json($allChartData ?? []),
+        debugMsg: '',
 
         init() {
+            // Render awal
             if (this.allData.length > 0) {
-                this.renderChart(this.filterData('1Y'));
+                this.filterChart('1Y');
+            } else {
+                this.renderChart([]);
             }
         },
 
         filterChart(period) {
             this.activeFilter = period;
-            this.isLoading = true;
-            setTimeout(() => {
-                this.updateChart(this.filterData(period));
-                this.isLoading = false;
-            }, 300);
+
+            // Filter data secara instan di browser
+            const filteredData = this.filterData(period);
+
+            // Update Text Debug (Opsional, untuk cek)
+            this.debugMsg = `Data: ${filteredData.length} hari`;
+
+            // Render ulang chart
+            this.updateChart(filteredData);
         },
 
         filterData(period) {
+            if (period === 'ALL') return this.allData;
+
             const now = new Date();
             let cutoffDate = new Date();
+
+            // Logic Mundur Tanggal
             switch (period) {
                 case '1M':
                     cutoffDate.setMonth(now.getMonth() - 1);
@@ -373,23 +385,29 @@ function chartComponent() {
                 case '1Y':
                     cutoffDate.setFullYear(now.getFullYear() - 1);
                     break;
-                case 'ALL':
-                    cutoffDate = new Date(0);
-                    break;
             }
-            return this.allData.filter(item => new Date(item.x) >= cutoffDate);
+
+            // Filter Array (Safe Date Parsing)
+            return this.allData.filter(item => {
+                // Ganti - dengan / agar aman di semua browser
+                const itemDate = new Date(item.x.replace(/-/g, '/'));
+                return itemDate >= cutoffDate;
+            });
         },
 
         renderChart(data) {
-            const ctx = document.getElementById('portfolioChart').getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            const ctx = document.getElementById('portfolioChart');
+            if (!ctx) return;
+            const context = ctx.getContext('2d');
+
+            const gradient = context.createLinearGradient(0, 0, 0, 300);
             gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
             gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
 
-            this.chartInstance = new Chart(ctx, {
+            this.chartInstance = new Chart(context, {
                 type: 'line',
                 data: {
-                    labels: data.map(d => new Date(d.x).toLocaleDateString('id-ID', {
+                    labels: data.map(d => new Date(d.x.replace(/-/g, '/')).toLocaleDateString('id-ID', {
                         day: 'numeric',
                         month: 'short'
                     })),
@@ -398,7 +416,7 @@ function chartComponent() {
                         data: data.map(d => d.y),
                         borderColor: '#4f46e5',
                         backgroundColor: gradient,
-                        borderWidth: 3,
+                        borderWidth: 2,
                         fill: true,
                         tension: 0.4,
                         pointRadius: 0,
@@ -408,6 +426,7 @@ function chartComponent() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: false, // Matikan animasi biar cepat
                     interaction: {
                         intersect: false,
                         mode: 'index'
@@ -415,12 +434,32 @@ function chartComponent() {
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR'
+                                        }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
                         }
                     },
                     scales: {
                         x: {
                             grid: {
                                 display: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 6
                             }
                         },
                         y: {
@@ -428,7 +467,12 @@ function chartComponent() {
                                 color: '#f1f5f9',
                                 borderDash: [5, 5]
                             },
-                            beginAtZero: false
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp ' + (value / 1000000).toFixed(0) + 'jt';
+                                }
+                            }
                         }
                     }
                 }
@@ -436,50 +480,52 @@ function chartComponent() {
         },
 
         updateChart(newData) {
+            // HANCURKAN CHART LAMA DAN BUAT BARU (Solusi Fix Chart Stuck)
             if (this.chartInstance) {
-                this.chartInstance.data.labels = newData.map(d => new Date(d.x).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'short'
-                }));
-                this.chartInstance.data.datasets[0].data = newData.map(d => d.y);
-                this.chartInstance.update();
+                this.chartInstance.destroy();
             }
+            this.renderChart(newData);
         }
     }
 }
 
-const ctxDonut = document.getElementById('assetChart').getContext('2d');
-const compositionData = @json($composition ?? []); // Aman jika null
-new Chart(ctxDonut, {
-    type: 'doughnut',
-    data: {
-        labels: Object.keys(compositionData),
-        datasets: [{
-            data: Object.values(compositionData),
-            backgroundColor: ['#6366f1', '#10b981', '#f97316', '#eab308', '#ec4899', '#8b5cf6'],
-            borderWidth: 0,
-            hoverOffset: 10
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '75%',
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    usePointStyle: true,
-                    padding: 20,
-                    font: {
-                        family: 'Outfit',
-                        size: 12,
-                        weight: 'bold'
-                    },
-                    color: '#475569'
+// Chart Donut Aset
+document.addEventListener('DOMContentLoaded', function() {
+    const ctxDonut = document.getElementById('assetChart');
+    if (ctxDonut) {
+        const compositionData = @json($composition ?? []);
+        new Chart(ctxDonut.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(compositionData),
+                datasets: [{
+                    data: Object.values(compositionData),
+                    backgroundColor: ['#6366f1', '#10b981', '#f97316', '#eab308', '#ec4899',
+                        '#8b5cf6'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 11,
+                                family: 'Outfit'
+                            }
+                        }
+                    }
                 }
             }
-        }
+        });
     }
 });
 </script>

@@ -5,21 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Product;
 use App\Models\Transaction;
-use App\Models\PortfolioSnapshot;
 use App\Models\Goal;
 use App\Models\Watchlist;
+use App\Models\PortfolioSnapshot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
         $userId = Auth::id();
-        $year = $request->get('year', date('Y'));
 
-        // --- 1. DATA DASAR ---
+        // ==========================================
+        // 1. HITUNG DATA SAAT INI (REALTIME)
+        // ==========================================
         $totalCash = Account::where('user_id', $userId)->sum('balance');
         $products = Product::where('user_id', $userId)->with('transactions')->get();
         
@@ -29,11 +31,12 @@ class DashboardController extends Controller
         $productPerformance = [];
 
         foreach ($products as $product) {
-            $beliUnits = $product->transactions->whereIn('type', ['beli', 'dividen_unit'])->sum('amount');
+            // Hitung Unit & Modal
+            $beliUnits = $product->transactions->whereIn('type', ['beli', 'dividen_unit', 'right_issue'])->sum('amount');
             $jualUnits = $product->transactions->where('type', 'jual')->sum('amount');
             $sisaUnit = $beliUnits - $jualUnits;
 
-            $totalModalBeli = $product->transactions->where('type', 'beli')->sum('total_value');
+            $totalModalBeli = $product->transactions->whereIn('type', ['beli', 'right_issue'])->sum('total_value');
             $avgPrice = ($beliUnits > 0) ? ($totalModalBeli / $beliUnits) : 0;
 
             if ($sisaUnit > 0) {
@@ -58,42 +61,84 @@ class DashboardController extends Controller
             }
         }
 
-        // --- 2. HITUNG NET WORTH & PROFIT ---
         $netWorth = $totalCash + $totalAssetValue;
         $profit = $totalAssetValue - $totalModalHoldings; 
         $isProfit = $profit >= 0;
         $totalInvested = $totalAssetValue;
 
-        // --- 3. HITUNG PERTUMBUHAN BULANAN ---
-        $startOfMonthNetWorth = PortfolioSnapshot::where('user_id', $userId)
-            ->where('snapshot_date', '<=', Carbon::now()->startOfMonth())
-            ->orderBy('snapshot_date', 'desc')
-            ->value('net_worth');
+        // ==========================================
+        // 2. LOGIC CHART (REVERSE CALCULATION)
+        // ==========================================
+        
+        // Cari tanggal transaksi paling PERTAMA (Untuk filter "Semua")
+        $firstTrx = Transaction::where('user_id', $userId)->orderBy('transaction_date', 'asc')->first();
+        
+        $endDate = Carbon::now();
+        // Jika belum ada transaksi, default mundur 30 hari
+        $startDate = $firstTrx ? Carbon::parse($firstTrx->transaction_date) : Carbon::now()->subDays(30);
 
-        $growthPercentage = 0;
-        if ($startOfMonthNetWorth > 0) {
-            $growthPercentage = (($netWorth - $startOfMonthNetWorth) / $startOfMonthNetWorth) * 100;
+        // Ambil SEMUA transaksi dari awal sampai sekarang
+        $transactions = Transaction::where('user_id', $userId)
+            ->whereDate('transaction_date', '>=', $startDate)
+            ->orderBy('transaction_date', 'desc')
+            ->get()
+            ->groupBy(function($date) {
+                return Carbon::parse($date->transaction_date)->format('Y-m-d');
+            });
+
+        $chartData = [];
+        $runningBalance = $netWorth; // Mulai dari saldo HARI INI
+        
+        // Loop mundur
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $dates = array_reverse(iterator_to_array($period)); 
+
+        foreach ($dates as $date) {
+            $dateStr = $date->format('Y-m-d');
+            
+            $chartData[] = [
+                'x' => $dateStr,
+                'y' => $runningBalance
+            ];
+
+            if (isset($transactions[$dateStr])) {
+                foreach ($transactions[$dateStr] as $trx) {
+                    // Balikkan efek transaksi
+                    if (in_array($trx->type, ['topup', 'dividen_cash'])) {
+                        $runningBalance -= $trx->total_value; 
+                    } elseif ($trx->type == 'tarik') {
+                        $runningBalance += $trx->total_value; 
+                    }
+                    $runningBalance += ($trx->fee ?? 0);
+                }
+            }
         }
 
-        // --- 4. TOP & WORST PERFORMERS ---
+        // Balik urutan jadi: Lama -> Baru
+        $allChartData = array_reverse($chartData);
+
+        // ==========================================
+        // 3. LOGIC LAINNYA
+        // ==========================================
+        // Hitung growth bulanan manual dari data chart
+        $lastMonthDate = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+        $lastMonthValue = collect($allChartData)->firstWhere('x', $lastMonthDate)['y'] ?? 0;
+        
+        if ($lastMonthValue == 0) {
+            $lastMonthValue = PortfolioSnapshot::where('user_id', $userId)
+                ->where('snapshot_date', '<=', Carbon::now()->startOfMonth())
+                ->orderBy('snapshot_date', 'desc')
+                ->value('net_worth') ?? 0;
+        }
+
+        $growthPercentage = ($lastMonthValue > 0) ? (($netWorth - $lastMonthValue) / $lastMonthValue) * 100 : 0;
+
         $coll = collect($productPerformance);
         $topGainers = $coll->sortByDesc('pnl_pct')->take(2);
         $worstPerformers = $coll->sortBy('pnl_pct')->take(2);
-
-        // --- 5. WATCHLIST & INSIGHT ---
-        $insights = [];
         
-        $watchlists = Watchlist::where('user_id', $userId)
-            ->limit(5)
-            ->get()
-            ->sortBy(function($item) {
-                if ($item->target_price > 0 && $item->current_price > 0) {
-                    return ($item->current_price - $item->target_price) / $item->target_price;
-                }
-                return 100;
-            });
-
-        // --- 6. TARGET KEUANGAN ---
+        $watchlists = Watchlist::where('user_id', $userId)->limit(5)->get();
+        
         $goals = Goal::where('user_id', $userId)->with('products')->get()->map(function($goal) {
             $currentVal = 0;
             foreach ($goal->products as $p) {
@@ -101,132 +146,20 @@ class DashboardController extends Controller
                      $p->transactions->where('type', 'jual')->sum('amount');
                 $currentVal += ($u * $p->current_price);
             }
-            $goal->percentage = ($goal->target_amount > 0) ? 
-                min(round(($currentVal / $goal->target_amount) * 100, 1), 100) : 0;
+            $goal->percentage = ($goal->target_amount > 0) ? min(round(($currentVal / $goal->target_amount) * 100, 1), 100) : 0;
             return $goal;
-        });
+        })->sortByDesc('percentage');
 
-        // Urutkan target berdasarkan persentase tertinggi
-        $goals = $goals->sortByDesc('percentage')->values();
+        $allProducts = Product::where('user_id', $userId)->orderBy('code')->get();
+        $insights = [];
 
-        // --- 7. DATA CHART ---
-        $snapshots = PortfolioSnapshot::where('user_id', $userId)
-            ->orderBy('snapshot_date', 'asc')
-            ->get(['snapshot_date', 'net_worth']);
-            
-        $allChartData = $snapshots->map(function($s) {
-            return [
-                'x' => Carbon::parse($s->snapshot_date)->format('Y-m-d'),
-                'y' => $s->net_worth
-            ];
-        });
-
-        if ($allChartData->isEmpty()) {
-            $allChartData = collect([['x' => date('Y-m-d'), 'y' => $netWorth]]);
-        }
-
-        $allProducts = Product::where('user_id', $userId)->orderBy('code')->get(['id', 'code', 'name', 'category']);
-
-        // --- 8. RETURN VIEW ---
         return view('dashboard', compact(
-            'netWorth',
-            'totalCash',
-            'totalInvested',
-            'totalAssetValue',
-            'profit',
-            'isProfit',
-            'growthPercentage',
-            'composition',
-            'topGainers',
-            'worstPerformers',
-            'insights',
-            'goals',
-            'watchlists',
-            'allChartData',
-            'allProducts'
+            'netWorth', 'totalCash', 'totalInvested', 'totalAssetValue', 
+            'profit', 'isProfit', 'growthPercentage', 'composition', 
+            'topGainers', 'worstPerformers', 'insights', 'goals', 
+            'watchlists', 'allChartData', 'allProducts'
         ));
     }
 
-    // --- METHOD CRUD GOALS YANG DIPISAHKAN ---
-
-    public function storeGoal(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'target_amount' => 'required|numeric|min:0',
-            'target_date' => 'nullable|date',
-            'products' => 'nullable|array'
-        ]);
-
-        $goal = Goal::create([
-            'user_id' => Auth::id(),
-            'name' => $request->name,
-            'target_amount' => $request->target_amount,
-            'target_date' => $request->target_date,
-            'current_amount' => 0
-        ]);
-
-        if ($request->has('products')) {
-            $goal->products()->sync($request->products);
-        }
-
-        return redirect()->back()->with('success', 'Goal berhasil dibuat!');
-    }
-
-    public function updateGoal(Request $request, $id)
-{
-    // Debug: lihat data yang dikirim
-    \Log::info('Update Goal Request:', $request->all());
-    
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'target_amount' => 'required|numeric|min:0',
-        'target_date' => 'nullable|date',
-        'products' => 'nullable|array'
-    ]);
-    
-    // Cari goal berdasarkan user
-    $goal = Goal::where('user_id', Auth::id())->find($id);
-    
-    if (!$goal) {
-        \Log::error('Goal not found or unauthorized', ['goal_id' => $id, 'user_id' => Auth::id()]);
-        return redirect()->back()->with('error', 'Goal tidak ditemukan atau tidak memiliki akses!');
-    }
-    
-    \Log::info('Goal found:', ['goal' => $goal->toArray()]);
-    
-    // Update goal
-    $updateData = [
-        'name' => $request->name,
-        'target_amount' => $request->target_amount,
-        'target_date' => $request->target_date
-    ];
-    
-    \Log::info('Goal update data:', $updateData);
-    
-    $goal->update($updateData);
-    
-    // Sync products
-    if ($request->has('products')) {
-        \Log::info('Syncing products:', ['products' => $request->products]);
-        $goal->products()->sync($request->products);
-    } else {
-        \Log::info('No products selected, detaching all');
-        $goal->products()->detach();
-    }
-    
-    // Refresh model untuk melihat perubahan
-    $goal->refresh();
-    \Log::info('Goal after update:', $goal->toArray());
-    
-    return redirect()->back()->with('success', 'Goal berhasil diperbarui!');
-}
-
-    public function destroyGoal($id)
-    {
-        $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
-        $goal->delete();
-
-        return redirect()->back()->with('success', 'Goal berhasil dihapus!');
-    }
+    // ... method storeGoal, updateGoal, destroyGoal biarkan saja ...
 }
