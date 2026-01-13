@@ -6,7 +6,7 @@
 ![Chart.js](https://img.shields.io/badge/Chart.js-F5788D?style=for-the-badge&logo=chartdotjs&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white)
 
-**Porto Tracking** adalah aplikasi web manajemen portofolio investasi pribadi yang dibangun menggunakan Framework Laravel. Aplikasi ini membantu investor memantau kekayaan bersih (_Net Worth_), riwayat transaksi, dan performa aset di berbagai akun RDN/Sekuritas dalam satu dasbor terpusat.
+**Porto Tracking untuk Rupiah Aset** adalah aplikasi web manajemen portofolio investasi pribadi yang dibangun menggunakan Framework Laravel. Aplikasi ini membantu investor memantau kekayaan bersih (_Net Worth_), riwayat transaksi, dan performa aset di berbagai akun RDN/Sekuritas dalam satu dasbor terpusat.
 
 ## 🌟 Fitur Utama
 
