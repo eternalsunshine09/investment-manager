@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Goal;
-use App\Models\Product; // Tambahkan ini
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,24 +29,41 @@ class GoalController extends Controller
         return back()->with('success', 'Target baru berhasil dibuat! 🎯');
     }
 
-    public function update(Request $request, Goal $goal)
+    // --- PERBAIKAN DI SINI ---
+    public function update(Request $request, $id)
     {
-        // Validasi dan update goal
-        $validated = $request->validate([
-            // aturan validasi
+        // 1. Cari Goal milik user yang sedang login
+        $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
+
+        // 2. Validasi input (Sama seperti store)
+        $request->validate([
+            'name' => 'required',
+            'target_amount' => 'required|numeric',
         ]);
 
-        $goal->update($validated);
+        // 3. Update data utama (Nama & Nominal)
+        $goal->update([
+            'name' => $request->name,
+            'target_amount' => $request->target_amount,
+        ]);
 
-        return redirect()->back()->with('success', 'Goal updated successfully.');
+        // 4. Update Hubungan Aset (Produk)
+        // Jika ada produk yang dicentang, sinkronkan.
+        // Jika tidak ada yang dicentang, hapus semua hubungan (detach).
+        if ($request->has('product_ids')) {
+            $goal->products()->sync($request->product_ids);
+        } else {
+            $goal->products()->detach();
+        }
+
+        return back()->with('success', 'Target berhasil diperbarui!');
     }
-    
 
     public function destroy($id)
     {
         $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
         
-        // Hapus relasi pivot dulu (opsional, biasanya otomatis jika cascade)
+        // Hapus relasi pivot (otomatis aman jika database cascade, tapi ini buat jaga-jaga)
         $goal->products()->detach();
         
         $goal->delete();
