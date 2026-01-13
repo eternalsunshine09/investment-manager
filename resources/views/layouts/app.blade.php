@@ -38,7 +38,7 @@
     </style>
 </head>
 
-<body x-data="{ sidebarOpen: window.innerWidth >= 768 }" class="text-slate-800">
+<body x-data="{ sidebarOpen: false }" class="text-slate-800">
 
     <div class="toggle-wrapper" :class="{ 'moved': sidebarOpen }">
         <label class="switch">
