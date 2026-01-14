@@ -34,16 +34,23 @@
                             </option>
                             <option value="jual" {{ $transaction->type == 'jual' ? 'selected' : '' }}>📈 Jual (Sell)
                             </option>
-                            <option value="topup" {{ $transaction->type == 'topup' ? 'selected' : '' }}>💰 Top Up
+                            <option value="topup" {{ $transaction->type == 'topup' ? 'selected' : '' }}>💰 Top Up RDN
                             </option>
                             <option value="tarik" {{ $transaction->type == 'tarik' ? 'selected' : '' }}>💸 Tarik Dana
                             </option>
                             <option value="dividen_cash" {{ $transaction->type == 'dividen_cash' ? 'selected' : '' }}>🎁
-                                Dividen</option>
+                                Dividen Tunai</option>
+                            <option value="dividen_unit" {{ $transaction->type == 'dividen_unit' ? 'selected' : '' }}>📃
+                                Dividen Unit</option>
+                            <option value="stock_split" {{ $transaction->type == 'stock_split' ? 'selected' : '' }}>✂️
+                                Stock Split</option>
+                            <option value="right_issue" {{ $transaction->type == 'right_issue' ? 'selected' : '' }}>🎟️
+                                Right Issue</option>
                         </select>
                         <div
                             class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500">
-                            <i class="fas fa-chevron-down text-xs"></i></div>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -60,7 +67,8 @@
                         </select>
                         <div
                             class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500">
-                            <i class="fas fa-wallet text-xs"></i></div>
+                            <i class="fas fa-wallet text-xs"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -79,7 +87,8 @@
                         </select>
                         <div
                             class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500">
-                            <i class="fas fa-chart-line text-xs"></i></div>
+                            <i class="fas fa-chart-line text-xs"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -89,9 +98,9 @@
                         <input type="date" name="transaction_date" value="{{ $transaction->transaction_date }}"
                             class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                     </div>
-                    <div x-show="['beli', 'jual'].includes(type)">
-                        <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Jumlah
-                            Unit</label>
+
+                    <div x-show="['beli', 'jual', 'dividen_unit', 'stock_split', 'right_issue'].includes(type)">
+                        <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Unit</label>
                         <input type="number" step="any" name="amount" value="{{ $transaction->amount + 0 }}"
                             placeholder="0"
                             class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
@@ -99,7 +108,7 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-5"
-                    x-show="['beli', 'jual', 'topup', 'tarik', 'dividen_cash'].includes(type)">
+                    x-show="['beli', 'jual', 'topup', 'tarik', 'dividen_cash', 'right_issue'].includes(type)">
                     <div :class="{'col-span-2': ['topup', 'tarik', 'dividen_cash'].includes(type)}">
                         <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">
                             <span
@@ -110,7 +119,7 @@
                             class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                     </div>
 
-                    <div x-show="['beli', 'jual'].includes(type)">
+                    <div x-show="['beli', 'jual', 'right_issue'].includes(type)">
                         <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Biaya
                             (Fee)</label>
                         <input type="number" name="fee" value="{{ $transaction->fee }}" placeholder="0"
