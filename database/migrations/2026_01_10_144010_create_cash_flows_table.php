@@ -6,26 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up()
+    // database/migrations/xxxx_xx_xx_create_cash_flows_table.php
+
+public function up(): void
 {
     Schema::create('cash_flows', function (Blueprint $table) {
         $table->id();
         $table->foreignId('user_id')->constrained()->onDelete('cascade');
-        $table->enum('type', ['income', 'expense']); // Pemasukan / Pengeluaran
-        $table->string('category'); // Gaji, Bonus, Topup RDN, Jajan, dll
-        $table->decimal('amount', 15, 2);
+        // Kita buat nullable dulu, nanti diisi saat import jika nama akun cocok
+        $table->foreignId('account_id')->nullable()->constrained()->onDelete('cascade'); 
+        
+        // Sesuaikan dengan data CSV (Income/Expenses)
+        $table->enum('type', ['income', 'expense']); 
+        
+        $table->string('category'); // Tambahan kolom kategori
+        $table->decimal('amount', 20, 2);
         $table->date('date');
-        $table->string('description')->nullable();
+        $table->string('description')->nullable(); // Untuk kolom 'note' dari CSV
         $table->timestamps();
     });
 }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('cash_flows');

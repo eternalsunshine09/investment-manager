@@ -72,6 +72,7 @@ Route::middleware('guest')->group(function () {
     Route::delete('/kalender/{id}', [ToolController::class, 'destroyEvent'])->name('tools.calendar.destroy');
 
     // CASH FLOW
+    Route::post('/cashflow/import', [App\Http\Controllers\CashFlowController::class, 'import'])->name('cashflow.import');
     Route::get('/cash-flow', [CashFlowController::class, 'index'])->name('cashflow.index');
     Route::post('/cash-flow', [CashFlowController::class, 'store'])->name('cashflow.store');
     Route::delete('/cash-flow/{id}', [CashFlowController::class, 'destroy'])->name('cashflow.destroy');
