@@ -50,10 +50,10 @@
 
         <a href="{{ route('transactions.index') }}"
             class="nav-item {{ Request::routeIs('transactions.*') ? 'active' : '' }}">
-            <i class="fas fa-exchange-alt w-6 text-center mr-2 text-orange-500"></i> Transaksi
+            <i class="fas fa-exchange-alt w-6 text-center mr-2 text-orange-500"></i> Transaksi Aset IDR
         </a>
         <a href="{{ route('cashflow.index') }}" class="nav-item {{ Request::routeIs('cashflow.*') ? 'active' : '' }}">
-            <i class="fas fa-wallet w-6 text-center mr-2 text-purple-500"></i> Arus Kas
+            <i class="fas fa-wallet w-6 text-center mr-2 text-purple-500"></i> Cash Flow
         </a>
 
         <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-2">Analisis</p>

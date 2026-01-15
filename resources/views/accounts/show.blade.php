@@ -3,123 +3,187 @@
 @section('title', 'Detail Rekening - ' . $account->name)
 
 @section('content')
-<div class="min-h-screen bg-slate-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-slate-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8" x-data="{ showModal: false }">
     <div class="max-w-5xl mx-auto space-y-8">
 
-        <a href="{{ route('accounts.index') }}"
-            class="inline-flex items-center gap-2 text-slate-500 hover:text-teal-600 font-bold transition-colors group mb-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <a href="{{ route('accounts.index') }}"
+                class="inline-flex items-center gap-2 text-slate-500 hover:text-teal-600 font-bold transition-colors group">
+                <div
+                    class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center group-hover:border-teal-400 shadow-sm transition-all">
+                    <i class="fas fa-arrow-left text-sm group-hover:-translate-x-0.5 transition-transform"></i>
+                </div>
+                <span>Kembali ke Daftar</span>
+            </a>
+
+            <div class="flex gap-3">
+                <button @click="showModal = true"
+                    class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 transition transform duration-200 flex items-center gap-2 text-sm">
+                    <i class="fas fa-plus-circle"></i> Catat Transaksi
+                </button>
+            </div>
+        </div>
+
+        <div
+            class="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl shadow-slate-200">
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-teal-500 rounded-full opacity-20 blur-3xl">
+            </div>
             <div
-                class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center group-hover:border-teal-400 shadow-sm">
-                <i class="fas fa-arrow-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
-            </div>
-            <span>Kembali ke Daftar Rekening</span>
-        </a>
-
-        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
-            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-teal-50 rounded-full opacity-50 blur-3xl">
+                class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-indigo-500 rounded-full opacity-20 blur-3xl">
             </div>
 
-            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div class="flex items-center gap-5">
-                    <div
-                        class="w-20 h-20 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center text-3xl shadow-inner border border-slate-100">
-                        🏦
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-3xl shadow-inner border border-white/20">
+                            🏦
+                        </div>
+                        <div>
+                            <span
+                                class="inline-block px-3 py-1 rounded-lg bg-white/20 backdrop-blur-md text-teal-100 text-xs font-bold uppercase tracking-wider mb-2 border border-white/10">
+                                {{ $account->bank_name }}
+                            </span>
+                            <h1 class="text-3xl md:text-4xl font-black tracking-tight text-white">{{ $account->name }}
+                            </h1>
+                        </div>
                     </div>
-                    <div>
-                        <span
-                            class="inline-block px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2 border border-slate-200">
-                            {{ $account->bank_name }}
-                        </span>
-                        <h1 class="text-3xl font-black text-slate-800 tracking-tight">{{ $account->name }}</h1>
-                        <p class="text-slate-400 text-sm mt-1">ID Akun: #{{ $account->id }}</p>
+
+                    <div class="flex gap-6 text-slate-300 text-sm font-medium">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-calendar-alt opacity-50"></i>
+                            Dibuat: {{ $account->created_at->format('d M Y') }}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i
+                                class="fas fa-circle text-[10px] {{ $account->is_active ? 'text-emerald-400' : 'text-rose-400' }}"></i>
+                            {{ $account->is_active ? 'Aktif' : 'Non-Aktif' }}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 bg-white/10 rounded text-xs border border-white/10">ID:
+                                #{{ $account->id }}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div
-                    class="text-left md:text-right w-full md:w-auto bg-slate-50 md:bg-transparent p-5 md:p-0 rounded-xl">
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Saldo Saat Ini</p>
-                    <h2 class="text-4xl font-black text-teal-600 tracking-tight">
+                <div class="text-left md:text-right">
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Saldo (Cash)</p>
+                    <h2
+                        class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-emerald-400 tracking-tight">
                         Rp {{ number_format($account->balance, 0, ',', '.') }}
                     </h2>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 class="font-bold text-slate-700 text-lg flex items-center gap-2">
-                    <i class="fas fa-history text-teal-500"></i> Riwayat Transaksi
-                </h3>
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div
+                class="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h3 class="font-black text-xl text-slate-800 flex items-center gap-2">
+                        <span>📊</span> Riwayat Transaksi & Cashflow
+                    </h3>
+                    <p class="text-slate-400 text-sm font-medium mt-1">Gabungan data investasi dan arus kas pada akun
+                        ini.</p>
+                </div>
 
+                <span
+                    class="text-xs font-bold text-slate-500 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+                    {{ $transactions->total() }} Data Ditemukan
+                </span>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+                    <thead
+                        class="bg-slate-50/50 text-slate-500 text-xs uppercase font-extrabold tracking-wider border-b border-slate-100">
                         <tr>
-                            <th class="px-6 py-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Tanggal</th>
-                            <th class="px-6 py-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Tipe</th>
-                            <th class="px-6 py-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Detail /
-                                Produk</th>
-                            <th class="px-6 py-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">
-                                Nominal</th>
+                            <th class="px-8 py-5">Tanggal</th>
+                            <th class="px-8 py-5">Kategori / Tipe</th>
+                            <th class="px-8 py-5">Keterangan / Produk</th>
+                            <th class="px-8 py-5 text-right">Nominal</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 text-sm">
+                    <tbody class="divide-y divide-slate-100">
                         @forelse($transactions as $trx)
-                        <tr class="hover:bg-slate-50/80 transition-colors duration-150">
-                            <td class="px-6 py-4 text-slate-600 font-medium">
-                                {{ \Carbon\Carbon::parse($trx->transaction_date)->format('d M Y') }}
-                            </td>
-
-                            <td class="px-6 py-4">
-                                @php
-                                $isIncome = in_array($trx->type, ['topup', 'jual', 'dividen_cash']);
-                                $badgeColor = $isIncome ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                                'bg-rose-100 text-rose-700 border-rose-200';
-                                $icon = $isIncome ? 'fa-arrow-down' : 'fa-arrow-up'; // Panah masuk/keluar
-                                @endphp
-                                <span
-                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border {{ $badgeColor }}">
-                                    <i class="fas {{ $icon }} text-[10px]"></i>
-                                    {{ strtoupper(str_replace('_', ' ', $trx->type)) }}
+                        <tr class="hover:bg-slate-50 transition duration-150 group">
+                            <td class="px-8 py-5 whitespace-nowrap">
+                                <span class="text-lg font-black text-slate-700 block leading-none">
+                                    {{ \Carbon\Carbon::parse($trx->transaction_date ?? $trx->date)->format('d') }}
+                                </span>
+                                <span class="text-xs text-slate-400 font-bold uppercase">
+                                    {{ \Carbon\Carbon::parse($trx->transaction_date ?? $trx->date)->format('M Y') }}
                                 </span>
                             </td>
 
-                            <td class="px-6 py-4">
-                                @if($trx->product)
+                            <td class="px-8 py-5">
+                                @php
+                                // Normalisasi Data (handle data dari tabel transactions atau cashflows)
+                                $type = $trx->type; // income, expense, buy, sell, deposit, topup
+
+                                // Tentukan apakah Pemasukan atau Pengeluaran
+                                $isIncome = in_array($type, ['income', 'deposit', 'topup', 'jual', 'dividen_cash']);
+
+                                // Style Badge
+                                $badgeClass = $isIncome
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                : 'bg-rose-50 text-rose-700 border border-rose-100';
+
+                                $icon = $isIncome ? 'fa-arrow-down' : 'fa-arrow-up';
+
+                                // Label Display
+                                $label = $trx->category ?? str_replace('_', ' ', $type);
+                                @endphp
+
+                                <span
+                                    class="px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 {{ $badgeClass }}">
+                                    <i class="fas {{ $icon }} text-[10px]"></i>
+                                    {{ strtoupper($label) }}
+                                </span>
+                            </td>
+
+                            <td class="px-8 py-5">
+                                @if(isset($trx->product))
                                 <div class="flex items-center gap-2">
-                                    <span class="font-bold text-slate-700">{{ $trx->product->code }}</span>
-                                    <span class="text-xs text-slate-400">({{ $trx->product->name ?? '' }})</span>
+                                    <span
+                                        class="font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-xs">{{ $trx->product->code }}</span>
+                                    <span
+                                        class="text-sm text-slate-500 font-medium">{{ $trx->product->name ?? '' }}</span>
                                 </div>
                                 @else
-                                <span class="text-slate-500 italic">{{ $trx->notes ?? 'Tidak ada catatan' }}</span>
+                                <div class="text-sm text-slate-600 font-medium truncate max-w-xs">
+                                    {{ $trx->description ?? $trx->notes ?? '-' }}
+                                </div>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-4 text-right">
-                                @if(in_array($trx->type, ['topup', 'jual', 'dividen_cash']))
-                                <span class="font-bold text-emerald-600 text-base">
-                                    + {{ number_format($trx->total_value, 0, ',', '.') }}
+                            <td class="px-8 py-5 text-right">
+                                @php
+                                $amount = $trx->amount ?? $trx->total_value ?? 0;
+                                @endphp
+
+                                @if($isIncome)
+                                <span class="font-black text-emerald-600 text-base tracking-tight">
+                                    + Rp {{ number_format($amount, 0, ',', '.') }}
                                 </span>
                                 @else
-                                <span class="font-bold text-rose-600 text-base">
-                                    - {{ number_format($trx->total_value, 0, ',', '.') }}
+                                <span class="font-black text-rose-500 text-base tracking-tight">
+                                    - Rp {{ number_format($amount, 0, ',', '.') }}
                                 </span>
                                 @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="py-12 text-center">
-                                <div class="flex flex-col items-center justify-center">
+                            <td colspan="4" class="px-6 py-16 text-center">
+                                <div class="flex flex-col items-center justify-center opacity-50">
                                     <div
-                                        class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                                        class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
                                         <i class="fas fa-receipt text-2xl text-slate-300"></i>
                                     </div>
-                                    <p class="text-slate-500 font-bold">Belum ada transaksi</p>
-                                    <p class="text-xs text-slate-400">Riwayat transaksi akun ini akan muncul di sini.
-                                    </p>
+                                    <p class="font-bold text-slate-500">Belum ada transaksi</p>
+                                    <p class="text-xs text-slate-400 mt-1">Data cashflow dan investasi akan muncul di
+                                        sini.</p>
                                 </div>
                             </td>
                         </tr>
@@ -129,10 +193,94 @@
             </div>
 
             @if($transactions->hasPages())
-            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+            <div class="px-8 py-6 border-t border-slate-50 bg-slate-50/30">
                 {{ $transactions->links() }}
             </div>
             @endif
+        </div>
+    </div>
+
+    <div x-show="showModal" style="display: none;"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+        x-transition.opacity>
+        <div @click.away="showModal = false"
+            class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto"
+            x-transition.scale>
+
+            <div class="px-8 pt-8 pb-4 flex justify-between items-center bg-white sticky top-0 z-10">
+                <h3 class="text-2xl font-black text-slate-800 tracking-tight">Catat Transaksi</h3>
+                <button @click="showModal = false"
+                    class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition flex items-center justify-center">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <form action="{{ route('cashflow.store') }}" method="POST" class="px-8 pb-8 space-y-5">
+                @csrf
+
+                <div class="grid grid-cols-2 gap-4 p-1 bg-slate-100 rounded-2xl" x-data="{ type: 'expense' }">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="type" value="income" class="peer sr-only" x-model="type">
+                        <div
+                            class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-emerald-600 peer-checked:shadow-sm transition-all">
+                            💰 Pemasukan
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="type" value="expense" class="peer sr-only" x-model="type">
+                        <div
+                            class="text-center py-3 rounded-xl font-bold text-sm text-slate-500 peer-checked:bg-white peer-checked:text-rose-500 peer-checked:shadow-sm transition-all">
+                            💸 Pengeluaran
+                        </div>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Sumber Dana /
+                        Akun</label>
+
+                    <input type="hidden" name="account_id" value="{{ $account->id }}">
+
+                    <div
+                        class="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-600 flex items-center gap-3 cursor-not-allowed">
+                        <span class="text-lg">🏦</span>
+                        <span>{{ $account->name }}</span>
+                        <span
+                            class="ml-auto text-xs font-normal text-slate-400 italic bg-white px-2 py-1 rounded-lg border border-slate-100">Otomatis
+                            Terpilih</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Tanggal</label>
+                    <input type="date" name="date" value="{{ date('Y-m-d') }}"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Kategori</label>
+                        <input type="text" name="category" placeholder="Contoh: Makan" required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Nominal</label>
+                        <input type="number" name="amount" placeholder="Rp 0" required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold text-slate-500 uppercase mb-2 ml-1">Keterangan</label>
+                    <input type="text" name="description" placeholder="Catatan tambahan..."
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 font-bold text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500 transition-all">
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 hover:scale-[1.02] transition-all">
+                    Simpan Transaksi
+                </button>
+            </form>
         </div>
     </div>
 </div>
