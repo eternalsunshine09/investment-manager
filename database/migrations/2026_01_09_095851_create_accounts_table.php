@@ -6,24 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
-{
-    Schema::create('accounts', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-        $table->string('name'); // Contoh: BCA Sekuritas
-        $table->string('bank_name')->nullable(); // Contoh: RDN BCA
-        $table->decimal('balance', 20, 2)->default(0); // Saldo RDN (Nanti kita fitur Topup)
-        $table->timestamps();
-    });
-}
+    {
+        Schema::dropIfExists('accounts');
+        
+        Schema::create('accounts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->string('bank_name')->nullable();
+            $table->decimal('balance', 15, 2)->default(0);
+            $table->string('account_type')->default('investment'); // investment, savings, checking
+            $table->string('account_number')->nullable();
+            $table->decimal('initial_balance', 15, 2)->default(0);
+            $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+            
+            $table->index(['user_id', 'is_active']);
+        });
+    }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('accounts');
