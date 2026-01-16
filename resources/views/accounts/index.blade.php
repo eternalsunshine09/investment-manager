@@ -52,7 +52,12 @@
                     </div>
                     <div>
                         <p class="text-slate-300 text-sm font-bold uppercase tracking-wider mb-1">Total Aset (Cash)</p>
-                        @php $totalSaldo = isset($accounts) ? $accounts->sum('balance') : 0; @endphp
+                        @php
+                        // Hitung Total saldo (Jika Valas, dikonversi kasar ke IDR atau dibiarkan angka mentah
+                        // tergantung kebutuhan)
+                        // Disini kita jumlahkan raw value saja untuk simplicity
+                        $totalSaldo = $accounts->sum('balance');
+                        @endphp
                         <h2 class="text-4xl md:text-5xl font-black text-white tracking-tight">
                             Rp {{ number_format($totalSaldo, 0, ',', '.') }}
                         </h2>
@@ -79,8 +84,8 @@
                         class="bg-slate-50/50 text-slate-500 text-xs uppercase font-extrabold tracking-wider border-b border-slate-100">
                         <tr>
                             <th class="px-8 py-5">Nama Akun</th>
-                            <th class="px-8 py-5">Bank (RDN)</th>
-                            <th class="px-8 py-5 text-right">Saldo</th>
+                            <th class="px-8 py-5">Bank / Mata Uang</th>
+                            <th class="px-8 py-5 text-right">Saldo & Kurs</th>
                             <th class="px-8 py-5 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -102,21 +107,39 @@
                                 </div>
                             </td>
                             <td class="px-8 py-5">
-                                <span
-                                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
-                                    {{ $account->bank_name }}
-                                </span>
+                                <div class="flex flex-col gap-1">
+                                    <span
+                                        class="w-fit px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                        {{ $account->bank_name }}
+                                    </span>
+                                    <span class="text-[10px] font-bold text-slate-400 ml-1">
+                                        {{ $account->currency ?? 'IDR' }}
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-8 py-5 text-right">
-                                <span class="font-black text-teal-600 text-lg tracking-tight">
-                                    Rp {{ number_format($account->balance, 0, ',', '.') }}
-                                </span>
+                                <div class="flex flex-col items-end">
+                                    <span class="font-black text-teal-600 text-lg tracking-tight">
+                                        {{ $account->currency == 'USD' ? '$' : ($account->currency == 'IDR' ? 'Rp' : $account->currency) }}
+                                        {{ number_format($account->balance, 2, ',', '.') }}
+                                    </span>
+
+                                    @if($account->currency != 'IDR' && $account->average_rate > 0)
+                                    <div
+                                        class="flex items-center gap-1 mt-1 text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
+                                        <span>Avg Rate:</span>
+                                        <span class="text-slate-600 font-bold">
+                                            Rp {{ number_format($account->average_rate, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-8 py-5">
                                 <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('accounts.show', $account->id) }}"
                                         class="text-xs font-bold bg-slate-100 text-slate-600 px-4 py-2 rounded-xl hover:bg-teal-50 hover:text-teal-700 transition flex items-center gap-2">
-                                        <i class="fas fa-eye"></i> Detail
+                                        <i class="fas fa-eye"></i>
                                     </a>
 
                                     <button
@@ -127,8 +150,7 @@
                                     </button>
 
                                     <form action="{{ route('accounts.destroy', $account->id) }}" method="POST"
-                                        class="inline-block"
-                                        onsubmit="return confirm('Hapus rekening ini? Data tidak bisa dikembalikan.');">
+                                        class="inline-block" onsubmit="return confirm('Hapus rekening ini?');">
                                         @csrf @method('DELETE')
                                         <button type="submit"
                                             class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
@@ -162,7 +184,6 @@
     <div x-show="showModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showModal = false" x-transition.opacity>
         </div>
-
         <div class="relative bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl p-8" x-transition.scale>
             <div class="flex justify-between items-center mb-8">
                 <div>
@@ -170,17 +191,14 @@
                     <p class="text-slate-400 text-sm mt-1">Isi detail informasi rekening.</p>
                 </div>
                 <button @click="showModal = false"
-                    class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition">
-                    <i class="fas fa-times"></i>
-                </button>
+                    class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition"><i
+                        class="fas fa-times"></i></button>
             </div>
 
             <form :action="isEdit ? '{{ url('accounts') }}/' + form.id : '{{ route('accounts.store') }}'" method="POST"
                 class="space-y-6">
                 @csrf
-                <template x-if="isEdit">
-                    <input type="hidden" name="_method" value="PUT">
-                </template>
+                <template x-if="isEdit"><input type="hidden" name="_method" value="PUT"></template>
 
                 <div class="space-y-5">
                     <div>
@@ -197,15 +215,12 @@
                             class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-indigo-500 focus:bg-white outline-none transition font-bold text-slate-700"
                             required>
                     </div>
-
                     <template x-if="!isEdit">
                         <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-                            <label class="block text-xs font-extrabold text-blue-600 uppercase mb-2 ml-1">Saldo Awal
-                                (Opsional)</label>
+                            <label class="block text-xs font-extrabold text-blue-600 uppercase mb-2 ml-1">Saldo
+                                Awal</label>
                             <input type="number" name="initial_balance" placeholder="Rp 0"
                                 class="w-full px-5 py-3 bg-white border border-blue-200 rounded-xl focus:border-blue-500 outline-none transition font-bold text-slate-700">
-                            <p class="text-[10px] text-blue-400 mt-2 ml-1">*Hanya diisi jika akun ini sudah memiliki
-                                saldo sebelumnya.</p>
                         </div>
                     </template>
                 </div>

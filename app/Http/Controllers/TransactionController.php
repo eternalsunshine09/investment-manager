@@ -38,7 +38,7 @@ class TransactionController extends Controller
         if ($request->has('account_id') && $request->account_id != '') {
             $query->where('account_id', $request->account_id);
         }
-
+    
         $transactions = $query->orderBy('transaction_date', 'desc')->paginate(10);
         
         // Data untuk dropdown

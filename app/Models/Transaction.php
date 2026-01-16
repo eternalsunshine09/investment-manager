@@ -12,13 +12,14 @@ class Transaction extends Model
     protected $fillable = [
         'user_id', 
         'product_id', 
-        'account_id', // <-- PASTIKAN INI ADA
+        'account_id', 
         'transaction_date', 
         'type', 
         'amount', 
         'price_per_unit', 
-        'total_value', 
-        'notes'
+        'total_value',
+        'exchange_rate', 
+        'notes' 
     ];
 
     public function product()

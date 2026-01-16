@@ -10,27 +10,34 @@ class ForeignAccountController extends Controller
 {
     public function index()
     {
-        // 1. Ambil Akun yang BUKAN IDR
+        // 1. Ambil Akun Valas
         $accounts = Account::where('user_id', Auth::id())
             ->where('currency', '!=', 'IDR')
-            ->orderBy('balance', 'desc') // Urutkan dari saldo terbesar
+            ->orderBy('balance', 'desc')
             ->get();
 
-        // 2. Hitung Total Saldo Asing (Estimasi)
-        $totalForeignBalance = $accounts->sum('balance');
+        // 2. Hitung Total Estimasi Aset dalam IDR
+        // Menggunakan Average Rate dari masing-masing akun
+        $totalForeignBalanceIDR = 0;
+        
+        foreach ($accounts as $acc) {
+            // Jika punya saldo dan rate rata-rata > 0, kalikan
+            if ($acc->balance > 0 && $acc->average_rate > 0) {
+                $totalForeignBalanceIDR += ($acc->balance * $acc->average_rate);
+            } 
+            // Opsional: Jika tidak ada rate rata-rata, bisa pakai rate manual/default (misal 15500 untuk USD)
+            // else if ($acc->currency == 'USD') { $totalForeignBalanceIDR += ($acc->balance * 16000); }
+        }
 
-        // Di halaman Index tidak perlu load transaksi lagi (sudah dipindah ke Show)
-        return view('foreign_accounts.index', compact('accounts', 'totalForeignBalance'));
+        return view('foreign_accounts.index', compact('accounts', 'totalForeignBalanceIDR'));
     }
 
     public function show($id)
     {
-        // 1. Ambil Detail Akun (Pastikan milik user & Bukan IDR)
         $account = Account::where('user_id', Auth::id())
             ->where('currency', '!=', 'IDR')
             ->findOrFail($id);
 
-        // 2. Ambil Transaksi KHUSUS akun ini
         $transactions = $account->transactions()
             ->orderBy('transaction_date', 'desc')
             ->paginate(15);

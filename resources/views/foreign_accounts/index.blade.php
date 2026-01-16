@@ -49,14 +49,16 @@
                         class="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl mb-6 border border-white/10 shadow-inner">
                         💰
                     </div>
-                    <p class="text-sky-100 text-sm font-bold uppercase tracking-wider mb-2">Total Aset (Estimasi)</p>
-                    <h3 class="text-5xl font-black tracking-tight text-white">
-                        <span class="text-3xl opacity-70">$</span>{{ number_format($totalForeignBalance, 0, ',', '.') }}
+                    <p class="text-sky-100 text-sm font-bold uppercase tracking-wider mb-2">Total Aset Valas (Estimasi
+                        IDR)</p>
+                    <h3 class="text-4xl md:text-5xl font-black tracking-tight text-white">
+                        <span
+                            class="text-2xl opacity-70 font-sans mr-1">Rp</span>{{ number_format($totalForeignBalanceIDR, 0, ',', '.') }}
                     </h3>
                 </div>
                 <div class="relative z-10 border-t border-white/10 pt-4 mt-4">
                     <p class="text-xs text-sky-100 opacity-80 flex items-center gap-2">
-                        <i class="fas fa-info-circle"></i> Total gabungan nilai nominal (Satuan unit)
+                        <i class="fas fa-info-circle"></i> Berdasarkan rata-rata kurs pembelian (Avg Rate)
                     </p>
                 </div>
             </div>
@@ -66,10 +68,6 @@
                 <a href="{{ route('foreign-accounts.show', $acc->id) }}" class="group block h-full">
                     <div
                         class="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm group-hover:shadow-xl group-hover:border-sky-100 group-hover:-translate-y-1 transition-all duration-300 h-full flex flex-col justify-between relative overflow-hidden">
-
-                        <div
-                            class="absolute -right-6 -top-6 w-24 h-24 bg-slate-50 rounded-full group-hover:bg-sky-50 transition-colors duration-300">
-                        </div>
 
                         <div class="flex justify-between items-start mb-6 relative z-10">
                             <div>
@@ -90,11 +88,26 @@
                         </div>
 
                         <div class="relative z-10 pt-4 border-t border-slate-50">
-                            <p class="text-xs text-slate-400 font-bold uppercase mb-1">Saldo Tersedia</p>
-                            <h4 class="text-3xl font-black text-slate-800 group-hover:text-sky-700 transition">
-                                <span
-                                    class="text-lg text-slate-400 font-medium mr-1">{{ $acc->currency == 'USD' ? '$' : $acc->currency }}</span>{{ number_format($acc->balance, 2) }}
-                            </h4>
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Saldo Valas</p>
+                                    <h4 class="text-3xl font-black text-slate-800 group-hover:text-sky-700 transition">
+                                        <span
+                                            class="text-lg text-slate-400 font-medium mr-1">{{ $acc->currency == 'USD' ? '$' : $acc->currency }}</span>{{ number_format($acc->balance, 2) }}
+                                    </h4>
+                                </div>
+
+                                @if($acc->average_rate > 0)
+                                <div class="text-right">
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Estimasi IDR</p>
+                                    <p class="text-sm font-bold text-slate-600">
+                                        Rp {{ number_format($acc->balance * $acc->average_rate, 0, ',', '.') }}
+                                    </p>
+                                    <p class="text-[10px] text-slate-400">Rate:
+                                        {{ number_format($acc->average_rate, 0) }}</p>
+                                </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </a>

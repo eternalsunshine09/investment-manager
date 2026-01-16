@@ -34,6 +34,7 @@ class ConversionController extends Controller
     // 2. Memproses Transaksi (Logic Utama)
     public function store(Request $request)
     {
+        // 1. Validasi
         $request->validate([
             'from_account_id' => 'required|exists:accounts,id',
             'to_account_id'   => 'required|exists:accounts,id|different:from_account_id',
@@ -41,47 +42,41 @@ class ConversionController extends Controller
             'exchange_rate'   => 'required|numeric|min:1',
         ]);
 
-        // Hitung jumlah USD yang didapat
-        $amountUsd = $request->amount_idr / $request->exchange_rate;
+        $amountForeign = $request->amount_idr / $request->exchange_rate;
 
-        DB::transaction(function () use ($request, $amountUsd) {
+        DB::transaction(function () use ($request, $amountForeign) {
             $userId = Auth::id();
-            $date   = now(); // Atau ambil dari request jika ada input tanggal
+            $date   = now();
+            
+            $fromAcc = Account::find($request->from_account_id);
+            $toAcc   = Account::find($request->to_account_id);
 
-            // --- A. SISI RUPIAH (Uang Keluar) ---
-            // Catat di CashFlow sebagai Pengeluaran
+            // A. UANG KELUAR (IDR) -> CASHFLOW
             CashFlow::create([
                 'user_id'     => $userId,
-                'account_id'  => $request->from_account_id,
-                'type'        => 'expense', // Uang keluar
+                'account_id'  => $fromAcc->id,
+                'type'        => 'expense', 
                 'category'    => 'Konversi Valas',
                 'amount'      => $request->amount_idr,
                 'date'        => $date,
-                'description' => 'Beli Valas ke Akun ID #' . $request->to_account_id . ' (Rate: ' . number_format($request->exchange_rate) . ')',
+                // Kita simpan info rate di deskripsi juga untuk kemudahan baca
+                'description' => "Beli {$toAcc->currency} ({$toAcc->name}). Rate: " . number_format($request->exchange_rate),
             ]);
+            $fromAcc->updateBalance();
 
-            // Update Saldo Akun Rupiah
-            $fromAcc = Account::find($request->from_account_id);
-            $fromAcc->updateBalance(); // Pastikan pakai method updateBalance() yang sudah kita buat sebelumnya
-
-            // --- B. SISI VALAS (Uang Masuk / Aset Bertambah) ---
-            // Catat di Transaction (Investasi) sebagai Topup
+            // B. UANG MASUK (VALAS) -> TRANSACTIONS
             Transaction::create([
                 'user_id'          => $userId,
-                'account_id'       => $request->to_account_id,
-                'type'             => 'topup', // Tipe Topup menambah aset
-                'amount'           => $amountUsd, // Masukkan nominal USD-nya
-                'price'            => $request->exchange_rate, // Harga beli per 1 USD
-                'quantity'         => $amountUsd, // Anggap 1 USD = 1 unit
+                'account_id'       => $toAcc->id,
+                'type'             => 'topup', 
+                'amount'           => $amountForeign, // Jumlah USD yang didapat
                 'transaction_date' => $date,
-                'notes'            => 'Topup dari IDR (Total Rp ' . number_format($request->amount_idr) . ')',
+                'exchange_rate'    => $request->exchange_rate, // <--- SIMPAN RATE DISINI
+                'notes'            => "Topup dari IDR (Total Rp " . number_format($request->amount_idr) . ")",
             ]);
-
-            // Update Saldo Akun Valas
-            $toAcc = Account::find($request->to_account_id);
             $toAcc->updateBalance();
         });
 
-        return redirect()->route('foreign-accounts.index')->with('success', 'Konversi berhasil! Saldo Rupiah terpotong & Valas bertambah.');
+        return redirect()->route('foreign-accounts.index')->with('success', 'Konversi berhasil disimpan!');
     }
 }

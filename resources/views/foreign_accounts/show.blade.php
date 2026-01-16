@@ -57,12 +57,8 @@
 
                     <div class="flex gap-6 text-slate-300 text-sm font-medium">
                         <div class="flex items-center gap-2">
-                            <i class="fas fa-calendar-alt opacity-50"></i>
-                            Dibuat: {{ $account->created_at->format('d M Y') }}
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="px-2 py-0.5 bg-white/10 rounded text-xs border border-white/10">ID:
-                                #{{ $account->id }}</span>
+                            <span class="px-2 py-0.5 bg-white/10 rounded text-xs border border-white/10">Avg Rate: Rp
+                                {{ number_format($account->average_rate, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 </div>
@@ -74,6 +70,11 @@
                         {{ $account->currency == 'USD' ? '$' : $account->currency }}
                         {{ number_format($account->balance, 2) }}
                     </h2>
+                    @if($account->average_rate > 0)
+                    <p class="text-sky-200 text-sm font-bold mt-2 opacity-80">
+                        ≈ Rp {{ number_format($account->balance * $account->average_rate, 0, ',', '.') }}
+                    </p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -120,11 +121,6 @@
                                 <span
                                     class="px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 
                                     {{ in_array($trx->type, ['topup', 'income', 'deposit']) ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100' }}">
-                                    @if(in_array($trx->type, ['topup', 'income', 'deposit']))
-                                    <i class="fas fa-arrow-down text-[10px]"></i>
-                                    @else
-                                    <i class="fas fa-arrow-up text-[10px]"></i>
-                                    @endif
                                     {{ strtoupper($trx->type) }}
                                 </span>
                             </td>
@@ -133,6 +129,12 @@
                                 <div class="text-sm text-slate-600 font-medium truncate max-w-xs">
                                     {{ $trx->notes ?? $trx->description ?? '-' }}
                                 </div>
+                                @if($trx->exchange_rate && $trx->exchange_rate > 0)
+                                <div
+                                    class="text-[10px] text-slate-400 mt-1 font-mono bg-slate-100 px-2 py-0.5 rounded w-fit">
+                                    Kurs: Rp {{ number_format($trx->exchange_rate, 0, ',', '.') }}
+                                </div>
+                                @endif
                             </td>
 
                             <td class="px-8 py-5 text-right">
@@ -151,13 +153,7 @@
                         @empty
                         <tr>
                             <td colspan="4" class="px-6 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center opacity-50">
-                                    <div
-                                        class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
-                                        <i class="fas fa-search text-2xl text-slate-300"></i>
-                                    </div>
-                                    <p class="font-bold text-slate-500">Belum ada transaksi</p>
-                                </div>
+                                <p class="font-bold text-slate-500">Belum ada transaksi</p>
                             </td>
                         </tr>
                         @endforelse

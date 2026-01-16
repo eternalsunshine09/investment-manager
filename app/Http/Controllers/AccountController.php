@@ -13,7 +13,15 @@ class AccountController extends Controller
     public function index()
     {
         $userId = Auth::id();
+        
+        // --- PERUBAHAN DISINI ---
+        // Tambahkan filter where untuk mengambil hanya 'IDR'
+        // atau currency NULL (jika data lama belum ada currency)
         $accounts = Account::where('user_id', $userId)
+                    ->where(function($query) {
+                        $query->where('currency', 'IDR')
+                              ->orWhereNull('currency');
+                    })
                     ->orderBy('is_active', 'desc')
                     ->get();
 

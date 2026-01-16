@@ -56,4 +56,37 @@ class Account extends Model
             $this->save();
         }
     }
+
+    /**
+     * Menghitung Harga Rata-Rata Pembelian (Average Rate)
+     */
+    public function getAverageRateAttribute()
+    {
+        // 1. Ambil transaksi masuk (Topup/Buy/Deposit) yang punya rate
+        $transactions = $this->transactions()
+            ->whereIn('type', ['topup', 'buy', 'deposit']) // Sesuaikan dengan tipe transaksi masukmu
+            ->where('exchange_rate', '>', 0) // Hanya yang punya kurs
+            ->get();
+
+        // 2. Jika tidak ada data, return 0
+        if ($transactions->isEmpty()) {
+            return 0;
+        }
+
+        // 3. Hitung Total Modal (Rupiah) & Total Unit (Valas)
+        $totalModalIdr = 0;
+        $totalUnitValas = 0;
+
+        foreach ($transactions as $trx) {
+            // Modal = Jumlah Valas * Kurs saat itu
+            $totalModalIdr += ($trx->amount * $trx->exchange_rate);
+            $totalUnitValas += $trx->amount;
+        }
+
+        // 4. Hindari pembagian dengan nol
+        if ($totalUnitValas <= 0) return 0;
+
+        // 5. Return Rata-rata
+        return $totalModalIdr / $totalUnitValas;
+    }
 }
