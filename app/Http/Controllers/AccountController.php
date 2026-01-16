@@ -27,6 +27,7 @@ class AccountController extends Controller
             'name' => 'required|string|max:255',
             'bank_name' => 'required|string|max:255',
             'initial_balance' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string|max:3', // Validasi input currency
         ]);
 
         Account::create([
@@ -36,6 +37,9 @@ class AccountController extends Controller
             'initial_balance' => $request->initial_balance ?? 0,
             'balance' => $request->initial_balance ?? 0,
             'is_active' => true,
+            
+            // Simpan Currency (Default IDR jika kosong)
+            'currency' => $request->currency ?? 'IDR', 
         ]);
 
         return back()->with('success', 'Rekening berhasil ditambahkan!');

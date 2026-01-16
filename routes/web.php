@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     CashFlowController,
     WatchlistController,
     GoalController,
-    ForeignAccountController // <--- 1. Controller Ditambahkan
+    ForeignAccountController,
+    ConversionController
 };
 
 /*
@@ -46,8 +47,11 @@ Route::middleware(['auth'])->group(function () {
     // --- A. MANAJEMEN AKUN ---
     Route::resource('accounts', AccountController::class);
 
-    // --- [BARU] MANAJEMEN VALAS ---
+    // --- MANAJEMEN VALAS ---
     Route::get('/foreign-accounts', [ForeignAccountController::class, 'index'])->name('foreign-accounts.index');
+    
+    // RUTE INI YANG HILANG SEBELUMNYA:
+    Route::get('/foreign-accounts/{id}', [ForeignAccountController::class, 'show'])->name('foreign-accounts.show');
     
     // Dummy Route untuk Konversi (Agar tidak error jika tombol diklik)
     Route::get('/conversion', function() { return "Fitur Konversi Coming Soon"; })->name('conversion.index');
@@ -55,6 +59,10 @@ Route::middleware(['auth'])->group(function () {
     // --- B. CASH FLOW ---
     Route::post('/cashflow/import', [CashFlowController::class, 'import'])->name('cashflow.import');
     Route::resource('cashflow', CashFlowController::class)->except(['create', 'show']);
+
+    // Route untuk Halaman Konversi
+    Route::get('/conversion', [ConversionController::class, 'index'])->name('conversion.index');
+    Route::post('/conversion', [ConversionController::class, 'store'])->name('conversion.store');
 
     // --- C. INVESTASI ---
     Route::resource('products', ProductController::class);
