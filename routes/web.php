@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     ToolController,
     CashFlowController,
     WatchlistController,
-    GoalController
+    GoalController,
+    ForeignAccountController // <--- 1. Controller Ditambahkan
 };
 
 /*
@@ -21,26 +22,22 @@ use App\Http\Controllers\{
 |--------------------------------------------------------------------------
 */
 
-// --- 1. REDIRECT HALAMAN UTAMA KE LOGIN ---
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// --- 2. GUEST ROUTES (Belum Login) ---
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
     
-    // Reset Password
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
-// --- 3. PROTECTED ROUTES (Sudah Login) ---
 Route::middleware(['auth'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -48,6 +45,12 @@ Route::middleware(['auth'])->group(function () {
 
     // --- A. MANAJEMEN AKUN ---
     Route::resource('accounts', AccountController::class);
+
+    // --- [BARU] MANAJEMEN VALAS ---
+    Route::get('/foreign-accounts', [ForeignAccountController::class, 'index'])->name('foreign-accounts.index');
+    
+    // Dummy Route untuk Konversi (Agar tidak error jika tombol diklik)
+    Route::get('/conversion', function() { return "Fitur Konversi Coming Soon"; })->name('conversion.index');
 
     // --- B. CASH FLOW ---
     Route::post('/cashflow/import', [CashFlowController::class, 'import'])->name('cashflow.import');
@@ -65,13 +68,10 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // --- E. PORTOFOLIO ---
-    // Update: Saya pisahkan 'asset.summary' dari grup agar namanya persis seperti yang dicari sidebar
     Route::prefix('portfolio')->name('portfolio.')->group(function() {
         Route::get('/', [PortfolioController::class, 'index'])->name('index'); 
         Route::post('/update-prices', [PortfolioController::class, 'updatePrices'])->name('update');
     });
-
-    // [FIX ERROR DISINI] Kita definisikan manual agar namanya 'asset.summary' (bukan portfolio.summary)
     Route::get('/portfolio/summary', [PortfolioController::class, 'assetSummary'])->name('asset.summary');
 
     // --- F. TOOLS ---

@@ -46,9 +46,7 @@ class AccountController extends Controller
     {
         $account = Account::where('user_id', Auth::id())->findOrFail($id);
 
-        // --- TEKNIK UNION: Menggabungkan 2 Tabel Berbeda ---
-        
-        // 1. Query CashFlow
+        // 1. Query CashFlow (Tabel ini punya kolom description, jadi aman)
         $cashflows = DB::table('cash_flows')
             ->where('account_id', $id)
             ->select(
@@ -57,12 +55,12 @@ class AccountController extends Controller
                 'type', 
                 'category', 
                 'description', 
-                'date as transaction_date', // Alias agar nama kolom seragam
+                'date as transaction_date', 
                 DB::raw("'cashflow' as source"),
-                DB::raw("NULL as product_name") // Dummy column
+                DB::raw("NULL as product_name")
             );
 
-        // 2. Query Transaksi Investasi (Jika Anda punya tabel transactions)
+        // 2. Query Transaksi Investasi (FIX: Gunakan NULL untuk description)
         $investments = DB::table('transactions')
             ->where('account_id', $id)
             ->select(
@@ -70,10 +68,15 @@ class AccountController extends Controller
                 'amount', 
                 'type', 
                 DB::raw("'Investasi' as category"), 
-                DB::raw("description as description"), // Sesuaikan nama kolom di DB Anda
+                
+                // --- BAGIAN YANG DIPERBAIKI ---
+                // Kita isi NULL karena tabel transactions tidak punya kolom description
+                DB::raw("NULL as description"), 
+                // ------------------------------
+                
                 'transaction_date', 
                 DB::raw("'investment' as source"),
-                DB::raw("NULL as product_name") // Nanti bisa diganti join ke products
+                DB::raw("NULL as product_name") 
             );
 
         // 3. Gabungkan dan Paginate

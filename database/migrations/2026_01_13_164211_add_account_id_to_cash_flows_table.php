@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('cash_flows', function (Blueprint $table) {
-            // Hubungkan ke tabel accounts
-            $table->foreignId('account_id')->after('user_id')->constrained('accounts')->onDelete('cascade');
-        });
+        // Cek dulu apakah kolom SUDAH ada
+        if (!Schema::hasColumn('cash_flows', 'account_id')) {
+            Schema::table('cash_flows', function (Blueprint $table) {
+                // Jika belum ada, baru buat kolomnya
+                $table->foreignId('account_id')->constrained()->onDelete('cascade')->after('user_id');
+            });
+        }
     }
 
     public function down()
